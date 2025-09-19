@@ -13,6 +13,7 @@ corregi la interfaz se ve mejor mira <div class="content-wrapper" style="margin-
                   <div class="card-header">
                     <h3 class="card-title">Buscar Cliente</h3>
                   </div>
+                  </div>
                   <div class="card-body">
                     <div class="input-group mb-3">
                       <input type="text" id="buscar-cliente" class="form-control" placeholder="Ingrese cliente por nombre o RFC" autocomplete="off">

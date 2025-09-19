@@ -90,9 +90,14 @@
                                 <p>Ver facturas</p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="panel?pg=carga-facturas" class="nav-link">
+                                <i class="nav-icon bi bi-file-earmark-arrow-down"></i>
+                                <p>Cargar facturas</p>
+                            </a>
+                        </li>
                     </ul>
                 </li>
-
                 <!--end::Modulo Facturación -->
 
                 <!--end::Modulo Planeación -->

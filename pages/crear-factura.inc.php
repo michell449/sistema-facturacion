@@ -13,6 +13,7 @@
                                 <!-- Buscar cliente -->
                                 <div class="card card-primary mb-4">
                                     <div class="card-header">
+                                    <div class="card-header">
                                         <h3 class="card-title">Buscar Cliente</h3>
                                     </div>
                                     <div class="card-body">
