@@ -8,7 +8,7 @@
             <!--<img src="../assets/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image opacity-75 shadow" />-->
             <!--end::Brand Image-->
             <!--begin::Brand Text-->
-            <span class="brand-text fw-light"><?php echo SYSNAME.' '.VERSION;?></span>
+            <span class="brand-text fw-light"><?php echo SYSNAME . ' ' . VERSION; ?></span>
             <!--end::Brand Text-->
         </a>
         <!--end::Brand Link-->
@@ -30,9 +30,9 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        
-                     
-                        
+
+
+
                     </ul>
                 </li>
                 <!--end::menu-->
@@ -53,13 +53,13 @@
                                 <p>Proyectos/casos</p>
                             </a>
                         </li>
-                       <li class="nav-item">
+                        <li class="nav-item">
                             <a href="panel?pg=visualizar-Tareas" class="nav-link">
                                 <i class="nav-icon bi bi-check-square"></i>
                                 <p>Tareas</p>
                             </a>
                         </li>
-                          <li class="nav-item">
+                        <li class="nav-item">
                             <a href="panel?pg=reportes-planeacion" class="nav-link">
                                 <i class="nav-icon bi bi-bar-chart"></i>
                                 <p>Reportes</p>
@@ -72,8 +72,8 @@
                 <li class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="nav-icon bi bi-receipt-cutoff"></i>
-                        <p>  
-                        Facturación
+                        <p>
+                            Facturación
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
                     </a>
@@ -84,7 +84,7 @@
                                 <p>Crear factura</p>
                             </a>
                         </li>
-                       <li class="nav-item">
+                        <li class="nav-item">
                             <a href="panel?pg=visualizar-facturas" class="nav-link">
                                 <i class="nav-icon bi bi-folder2-open"></i>
                                 <p>Ver facturas</p>
@@ -92,9 +92,9 @@
                         </li>
                     </ul>
                 </li>
-                
+
                 <!--end::Modulo Facturación -->
-                
+
                 <!--end::Modulo Planeación -->
 
                 <!--begin::Modulo Configuración 
