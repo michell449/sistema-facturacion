@@ -1,7 +1,7 @@
 <div class="content-wrapper" style="margin-left:0 !important; padding:0 15px;">
     <div class="card bg-white shadow-sm mt-4 mb-4">
         <div class="card-header bg-primary text-white p-3">
-            <h2 class="fw-bold m-0">Facturación</h2>
+            <h2 class="fw-bold m-0">Facturar</h2>
         </div>
         <div class="card-body">
             <div class="content">
