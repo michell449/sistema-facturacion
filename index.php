@@ -20,10 +20,10 @@ if ($pagePath == 'index') {
 }
 
 if (empty($pagePath)) {
-   if ($_SESSION['USR_ID'] == '') {
-      $pagePath = 'login';
-  } else {
-      $pagePath = 'panel';
+    if ($_SESSION['USR_ID'] == '') {
+        $pagePath = 'login';
+    } else {
+        $pagePath = 'panel';
     }
 }
 $pageInclude = "pages/$pagePath.inc.php";
@@ -38,12 +38,11 @@ $pageTitle = ucfirst($pageTitle);
 
 require_once 'pages/head.inc.php';
 
-if ($pagePath == 'panel'){
-   echo '<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">';
-}else {
-   echo '<body class="login-page bg-body-secondary">';
+if ($pagePath == 'panel') {
+    echo '<body class="layout-fixed sidebar-expand-lg sidebar-open bg-body-tertiary">';
+} else {
+    echo '<body class="login-page bg-body-secondary">';
 }
 require_once $pageInclude;
 require_once 'pages/script.inc.php';
 ob_end_flush();
-?>

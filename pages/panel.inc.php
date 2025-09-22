@@ -1,5 +1,5 @@
 <!-- Panel principal de la aplicación usuarios -->
- <?php
+.<?php
 if ($_SESSION['USR_TYPE'] == '') {
     // Destruyendo la session 
     session_start();
@@ -21,4 +21,4 @@ require_once 'pages/app-main.inc.php';
 require_once 'pages/app-footer.inc.php';
 echo '</div>'   //!--end::App Wrapper-->
 
- ?>
+?>

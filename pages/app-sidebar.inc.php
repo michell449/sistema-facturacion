@@ -79,7 +79,7 @@
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="panel?pg=crear-factura" class="nav-link">
+                            <a href="panel?pg=crear-facturas" class="nav-link">
                                 <i class="nav-icon bi bi-file-earmark-text"></i>
                                 <p>Crear factura</p>
                             </a>
@@ -91,7 +91,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="panel?pg=carga-facturas" class="nav-link">
+                            <a href="panel?pg=cargar-facturas" class="nav-link">
                                 <i class="nav-icon bi bi-file-earmark-arrow-down"></i>
                                 <p>Cargar facturas</p>
                             </a>

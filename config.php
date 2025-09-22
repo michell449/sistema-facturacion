@@ -27,7 +27,7 @@ if (!defined('ABS_PATH')) {
 
 if (!defined('HOMEURL')) {
     // URL donde se aloja la aplicacion 
-    $base = 'localhost/app';
+    $base = 'localhost/app-m';
     define('HOMEURL', "$uri$base");
 }
 
@@ -37,13 +37,14 @@ if (!defined('PLANTILLAS_CORREO')) {
 
 
 
+
 /**
  * Parámetros del MySQL  
  */
 define('MULTISITE', 0);
 
 /** MySQL database name */
-define('DB_NAME', 'myadmin');
+define('DB_NAME', 'sistema_usuarios');
 
 /** MySQL database username */
 define('DB_USER', 'root');
@@ -66,6 +67,8 @@ define('MAIL_USER', 'noreply@xube.com.mx');
 define('MAIL_PSWD', '@Xub3*761');
 define('MAIL_AUT', TRUE);
 define('MAIL_SEC', 'tls');
+
+
 
 
 date_default_timezone_set('America/Mexico_City');
