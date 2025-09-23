@@ -31,10 +31,10 @@ if ($nMessage < 1) {
     echo '</div>';
     //<!--end::Message-->
   }
-   echo '<div class="dropdown-divider"></div>';
-   echo '<a href="#" class="dropdown-item dropdown-footer">Ver todos los mensajes</a>';             
-   echo '</div>';               
+  echo '<div class="dropdown-divider"></div>';
+  echo '<a href="#" class="dropdown-item dropdown-footer">Ver todos los mensajes</a>';
+  echo '</div>';
   //   <!--end::Messages Dropdown Menu-->
 }
-echo '</li>';  
+echo '</li>';
 echo '</a>';
