@@ -8,7 +8,7 @@
                 <div class="alert alert-danger" role="alert">
                     <?php echo $_SESSION['ERROR_MSG']; ?>
                 </div> <?php } ?>
-            <p class="login-box-msg">Inicie sesiÃ³n para comenzar.</p>
+            <p class="login-box-msg">Inicie sesión para comenzar.</p>
             <form action="core/login.php" method="post">
                 <div class="input-group mb-1">
                     <div class="form-floating">
@@ -29,7 +29,7 @@
                     <div class="col-8 d-inline-flex align-items-center">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" />
-                            <label class="form-check-label" for="flexCheckDefault">Mantener sesiÃ³n</label>
+                            <label class="form-check-label" for="flexCheckDefault">Mantener sesión</label>
                         </div>
                     </div>
                     <!-- /.col -->
@@ -42,7 +42,7 @@
                 </div>
                 <!--end::Row-->
             </form>
-            <p class="mb-1"><a href="forgotpassword">Olvide mi contraseÃ±a</a></p>
+            <p class="mb-1"><a href="forgotpassword">Olvide mi contraseña</a></p>
         </div>
         <!-- /.login-card-body -->
     </div>
