@@ -198,7 +198,7 @@
                 echo '<td>' . $row['emisor_rfc'] . '</td>';
                 echo '<td>' . $row['receptor_rfc'] . '</td>';
                 echo '<td>' . $row['emisor_nombre'] . '</td>';
-                echo '<td>' . $row['fecha_timbrado'] . '</td>';
+                echo '<td>' . $row['fecha'] . '</td>';
                 echo '<td>' . $row['receptor_uso_cfdi'] . '</td>';
                 echo '<td>' . number_format($row['subtotal'], 2) . '</td>';
                 echo '<td>' . number_format($row['total'], 2) . '</td>';
