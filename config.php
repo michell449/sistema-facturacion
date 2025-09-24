@@ -44,7 +44,7 @@ if (!defined('PLANTILLAS_CORREO')) {
 define('MULTISITE', 0);
 
 /** MySQL database name */
-define('DB_NAME', 'sistema_usuarios');
+define('DB_NAME', 'facturacion');
 
 /** MySQL database username */
 define('DB_USER', 'root');
@@ -94,4 +94,16 @@ if (!isset($_SESSION['DEFAULT_MSG'])) {
 }
 
 $appPath = HOMEURL;
+
+/**
+ * Conexión a MySQL
+ */
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+
+if ($conn->connect_error) {
+    die("Error en la conexión a la BD: " . $conn->connect_error);
+}
+
+$conn->set_charset("utf8");
+
 
