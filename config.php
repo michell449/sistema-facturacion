@@ -44,7 +44,7 @@ if (!defined('PLANTILLAS_CORREO')) {
 define('MULTISITE', 0);
 
 /** MySQL database name */
-define('DB_NAME', 'facturacion');
+define('DB_NAME', 'sis_rje');
 
 /** MySQL database username */
 define('DB_USER', 'root');
