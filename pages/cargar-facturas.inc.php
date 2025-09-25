@@ -137,12 +137,21 @@
                         </div>
                         <div class="modal-body">
                             <form id="form-descarga1-1 class=" row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Tipo de facturas</label>
-                                    <select class="form-select">
-                                        <option value="emitidas">Emitidas</option>
-                                        <option value="recibidas">Recibidas</option>
-                                    </select>
+                                <div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tipo de facturas</label>
+                                        <select class="form-select">
+                                            <option value="emitidas">Emitidas</option>
+                                            <option value="recibidas">Recibidas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tipo de solicitud</label>
+                                        <select class="form-select" id="">
+                                            <option value="cfdi">CFDI</option>
+                                            <option value="metadata">Metadata</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Fecha inicio</label>
@@ -192,9 +201,9 @@
                                 </tbody>
                             </table>
                             <div id="cfdiParseErrors" class="text-danger"></div>
-                                <div class="modal-footer" >
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
