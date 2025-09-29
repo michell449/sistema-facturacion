@@ -22,7 +22,8 @@ use chillerlan\QRCode\QROptions;
 function generarPdfFactura($datosFactura, $rutaGuardado, $contenidoXml)
 {
     try {
-        // Logica para el QR del SAT
+        // --- INICIO: Lógica para el QR del SAT ---
+        // El QR debe contener: RFC Emisor, RFC Receptor, Total y los últimos 8 dígitos del Sello Digital.
         // Extraemos el sello del comprobante.
         $sello = '';
         if (preg_match('/Sello="([^"]+)"/', $contenidoXml, $matches)) {
@@ -33,15 +34,17 @@ function generarPdfFactura($datosFactura, $rutaGuardado, $contenidoXml)
         $qrData = sprintf(
             "https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx?id=%s&re=%s&rr=%s&tt=%s&fe=%s",
             $datosFactura['uuid'],
-            htmlspecialchars($datosFactura['emisor_rfc']), 
+            htmlspecialchars($datosFactura['emisor_rfc']), // Usar htmlspecialchars para seguridad
             htmlspecialchars($datosFactura['receptor_rfc']),
             $datosFactura['total'],
             $ultimos8Sello
         );
 
         $qrCode = (new QRCode)->render($qrData);
-        //fin logica QR
+        // --- FIN: Lógica para el QR del SAT ---
 
+        // --- INICIO: Extracción de conceptos (Mejora importante) ---
+        // Tu parser actual no extrae los conceptos, los agregamos aquí.
         $xml = simplexml_load_string($contenidoXml);
         $xml->registerXPathNamespace('cfdi', 'http://www.sat.gob.mx/cfd/4');
         $xml->registerXPathNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
@@ -70,6 +73,8 @@ function generarPdfFactura($datosFactura, $rutaGuardado, $contenidoXml)
 
         return true;
     } catch (\Exception $e) {
+        // En un entorno de producción, registrarías este error en un log.
+        // error_log('Error al generar PDF: ' . $e->getMessage());
         return false;
     }
 }
@@ -91,6 +96,7 @@ $items = $input['items'];
 $inserted = [];
 $errors = [];
 
+// MODIFICADO: Se añade pdf_file a la consulta
 $stmt = $conn->prepare("INSERT INTO facturas 
     (uuid, version, fecha, subtotal, total, moneda, metodo_pago, forma_pago, lugar_expedicion, no_certificado, condiciones_pago, exportacion, tipo_comprobante, emisor_rfc, emisor_nombre, receptor_rfc, receptor_nombre, receptor_domicilio, receptor_uso_cfdi, no_certificado_sat, rfc_prov_certif, xml_file, pdf_file, serie, folio)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -122,7 +128,7 @@ foreach ($items as $it) {
         continue;
     }
 
-    // Generación del PDF
+    // --- NUEVO: Generación del PDF ---
     $finalPdfName = $uuid . '.pdf';
     $destPdfPath = $uploadPdfDir . $finalPdfName;
     $xmlContent = file_get_contents($destXmlPath); // Leemos el XML ya guardado
@@ -132,9 +138,10 @@ foreach ($items as $it) {
         @unlink($destXmlPath); // Limpiamos el XML si el PDF falló
         continue;
     }
-    // FIN
+    // --- FIN: Generación del PDF ---
 
 
+    // MODIFICADO: bind params (25 ahora, uno más para el pdf)
     $version = $it['version'] ?? '';
     $fecha = $it['fecha'] ?? null;
     $subtotal = $it['subtotal'] ?? 0.00;

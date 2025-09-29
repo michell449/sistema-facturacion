@@ -36,66 +36,109 @@ theme: Default.scrollbarTheme,
 </script>
 <!--end::OverlayScrollbars Configure-->
 <!--end::Script-->
+<!-- Agrega en tu cargar-facturas.inc.php: un div donde se mostrará la tabla en el modal -->
+<!-- Dentro del modal #cfdiModal coloca este tbody -->
 
 <script>
+// IDs: xmlFile, zipFile, cfdiModal (modal), cfdiReviewBody, cfdiParseErrors
 const xmlInput = document.getElementById('xmlFile');
 const zipInput = document.getElementById('zipFile');
 const cfdiModalEl = document.getElementById('cfdiModal');
 const cfdiModal = new bootstrap.Modal(cfdiModalEl);
 const cfdiReviewBody = document.getElementById('cfdiReviewBody');
 const cfdiParseErrors = document.getElementById('cfdiParseErrors');
-const manualUploadButtons = document.querySelectorAll('button[data-bs-target="#cfdiModal"]');
 
 async function enviarArchivosParse() {
-    const fd = new FormData();
-    if (xmlInput && xmlInput.files.length > 0) {
-        for(const file of xmlInput.files) fd.append('xmlFile[]', file);
-    }
-    if (zipInput && zipInput.files.length > 0) {
-        for(const file of zipInput.files) fd.append('zipFile[]', file);
-    }
-    
-    if (fd.entries().next().done) {
-        Swal.fire('Atención', 'Debes seleccionar al menos un archivo XML o ZIP.', 'warning');
-        return;
+  const fd = new FormData();
+  if (xmlInput && xmlInput.files.length > 0) {
+    fd.append('xmlFile', xmlInput.files[0]);
+  }
+  if (zipInput && zipInput.files.length > 0) {
+    fd.append('zipFile', zipInput.files[0]);
+  }
+  if (!fd.has('xmlFile') && !fd.has('zipFile')) {
+    alert('Selecciona un XML o un ZIP primero.');
+    return;
+  }
+
+  try {
+    const res = await fetch('core/cargar-xml.php', {
+      method: 'POST',
+      body: fd
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("⚠️ Respuesta cruda del servidor:", text);
+      alert("El servidor devolvió un error. Revisa la consola (F12).");
+      return;
     }
 
-    // Mostrar el modal y el spinner
-    cfdiReviewBody.innerHTML = '<tr><td colspan="11" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></td></tr>';
+    if (!data.success && (!data.parsed || data.parsed.length === 0)) {
+      cfdiParseErrors.innerText = data.message || JSON.stringify(data.errors || []);
+      return;
+    }
+
+    // limpiar tabla
+    cfdiReviewBody.innerHTML = '';
     cfdiParseErrors.innerText = '';
+
+    // poblar filas
+    data.parsed.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = true;
+      chk.dataset.tmp = item._tmp_file;
+      chk.dataset.index = idx;
+
+      tr.innerHTML = `
+        <td></td>
+        <td>${idx+1}</td>
+        <td>${item.uuid || ''}</td>
+        <td>${item.fecha || ''}</td>
+        <td>${item.emisor_rfc || ''}</td>
+        <td>${item.receptor_rfc || ''}</td>
+        <td>${item.subtotal || ''}</td>
+        <td>${item.total || ''}</td>
+        <td>${item.serie || ''}</td>
+        <td>${item.folio || ''}</td>
+        <td>${item.uuid ? '<span class="badge bg-success">UUID OK</span>' : '<span class="badge bg-warning">UUID faltante</span>'}</td>
+      `;
+      tr.children[0].appendChild(chk);
+      tr.dataset.item = JSON.stringify(item);
+      cfdiReviewBody.appendChild(tr);
+    });
+
+    if (data.errors && data.errors.length) {
+      cfdiParseErrors.innerText = data.errors.join(' | ');
+    }
+
     cfdiModal.show();
 
-    try {
-        const res = await fetch(`${BASE_URL}core/cargar-xml.php`, {
-            method: 'POST',
-            body: fd
-        });
-
-        const text = await res.text();
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch (e) {
-            console.error(" El servidor no devolvió un JSON válido. Respuesta cruda:", text);
-            Swal.fire("Error del Servidor", "La respuesta no es un JSON. Revisa la consola (F12) y la pestaña Network para ver el error de PHP.", "error");
-            return;
-        }
-
-        cfdiReviewBody.innerHTML = '';
-        if (data.parsed && data.parsed.length > 0) {
-        }
-    } catch (err) {
-        console.error(err);
-        Swal.fire('Error de Conexión', 'No se pudo contactar al servidor: ' + err.message, 'error');
-    }
+  } catch (err) {
+    console.error(err);
+    alert('Error al enviar archivos: ' + err.message);
+  }
 }
 
-manualUploadButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+  const botones = document.querySelectorAll('button[data-bs-target="#cfdiModal"]');
+  if (botones.length > 0) { // verificamos que existan
+    botones.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); // opcional si quieres evitar submit
         enviarArchivosParse();
+      });
     });
+  }
 });
+
+
+
 
 
 // Confirmar guardado
@@ -142,7 +185,7 @@ btnConfirm.addEventListener('click', async () => {
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error(" Respuesta cruda del servidor (guardar):", text);
+      console.error("⚠️ Respuesta cruda del servidor (guardar):", text);
       alert("El servidor devolvió un error al guardar. Revisa la consola.");
       return;
     }
@@ -167,17 +210,18 @@ if (modalFooter) modalFooter.appendChild(btnConfirm);
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Variable para almacenar los datos temporalmente
+    // Variable para almacenar los datos parseados temporalmente
     let parsedCfdiData = [];
 
-    // Función para enviar los archivos 
+    // Función para enviar los archivos y parsearlos
     async function enviarArchivosParse() {
         const form = document.getElementById('form-manual');
         const zipFileInput = document.getElementById('zipFile');
-        const xmlFileInput = document.getElementById('xmlFile');
+        const xmlFileInput = document.getElementById('xmlFile'); // Asumimos que también quieres soportar el input individual
         
         const formData = new FormData();
         
+        // Agregar archivos de ambos inputs si existen
         if (xmlFileInput.files.length > 0) {
             for(const file of xmlFileInput.files) {
         formData.append('xmlFile[]', file);
@@ -247,10 +291,10 @@ if (modalFooter) modalFooter.appendChild(btnConfirm);
         }
     }
     
-    // Asignar la función al botón correcto
+    // Asignar la función al botón correcto (el del ZIP). Puedes hacer lo mismo para el XML individual.
     document.querySelector('button[onclick="enviarArchivosParse()"]').addEventListener('click', enviarArchivosParse);
 
-    // Guardar los CFDI seleccionados
+    // Lógica para guardar los CFDI seleccionados
     document.getElementById('guardarCfdiBtn').addEventListener('click', async function() {
         const selectedItems = [];
         document.querySelectorAll('.cfdi-checkbox:checked').forEach(checkbox => {
@@ -303,7 +347,7 @@ if (modalFooter) modalFooter.appendChild(btnConfirm);
         }
     });
 
-    // Funcionalidad para el checkbox 
+    // Funcionalidad para el checkbox "seleccionar todo"
     document.getElementById('selectAllCfdi').addEventListener('change', function() {
         document.querySelectorAll('.cfdi-checkbox').forEach(checkbox => {
             checkbox.checked = this.checked;

@@ -1,147 +1,225 @@
 <?php
-// Forzar la captura de cualquier salida inesperada desde el inicio.
+// app-m/core/cargar-xml.
+// Forzar JSON siempre
+header('Content-Type: application/json; charset=utf-8');
+
+// Capturar cualquier salida no deseada
 ob_start();
 
-// Solo permitir peticiones POST
-if ($_SERVER!== 'POST') {
-    http_response_code(405); // Method Not Allowed
-    echo json_encode(['success' => false, 'message' => 'Método no permitido.']);
-    exit;
-}
+require_once __DIR__ . "/../config.php"; // debe definir $conn (mysqli)
+header('Content-Type: application/json; charset=utf-8');
 
-require_once __DIR__. "/../config.php";
-
-ini_set('display_errors', 0); // Crucial para no contaminar la respuesta JSON
-ini_set('log_errors', 1);
+ini_set('display_errors', 0);
 libxml_use_internal_errors(true);
 
-$uploadTmpDir = __DIR__. "/../uploads/tmp/";
-if (!is_dir($uploadTmpDir)) {
-    mkdir($uploadTmpDir, 0755, true);
-}
+// límites y paths
+$maxFileSize = 10 * 1024 * 1024; // 10 MB por archivo (ajusta)
+$uploadTmpDir = __DIR__ . "/../uploads/tmp/";
+if (!is_dir($uploadTmpDir)) mkdir($uploadTmpDir, 0755, true);
 
-// Función para parsear XML (sin cambios, ya era robusta)
+// helper para parsear un XML string y devolver array de datos o false
 function parseCfdiXmlString($xmlString) {
-    //... (Tu función parseCfdiXmlString aquí, sin cambios)
     libxml_use_internal_errors(true);
     $xml = simplexml_load_string($xmlString);
     if (!$xml) return false;
 
+    // Podemos buscar por local-name para no depender del prefijo
+    $names = [];
+    foreach ($xml->getDocNamespaces(true) as $k => $v) {
+        $names[$k] = $v;
+    }
+
+    // función auxiliar para buscar nodos por local-name
     $getByLocal = function($node, $local) {
         $res = $node->xpath("//*[local-name()='$local']");
-        return ($res && count($res)>0)? $res : null;
+        return ($res && count($res)>0) ? $res[0] : null;
     };
 
-    $comprobante = $getByLocal($xml, 'Comprobante')?: $xml;
+    $comprobante = $getByLocal($xml, 'Comprobante') ?: $xml;
     $emisor      = $getByLocal($xml, 'Emisor');
     $receptor    = $getByLocal($xml, 'Receptor');
+    // timbre normalmente está en complemento -> TimbreFiscalDigital
     $timbre      = $getByLocal($xml, 'TimbreFiscalDigital');
 
-    if (!$comprobante ||!$emisor ||!$receptor ||!$timbre) {
+    if (!$comprobante || !$emisor || !$receptor || !$timbre) {
+        // devolver false si faltan nodos esenciales
         return false;
     }
 
-    $data =;
-    $data['uuid']               = (string) $timbre?: '';
-    $data['fecha']              = (string) $comprobante['Fecha']?: null;
-    $data['subtotal']           = (string) $comprobante?: '0.00';
-    $data['total']              = (string) $comprobante?: '0.00';
-    $data['emisor_rfc']         = (string) $emisor?: '';
-    $data['receptor_rfc']       = (string) $receptor?: '';
-    //... (resto de los campos que necesites)
-    $data['version']            = (string) $comprobante['Version']?: '';
-    $data['moneda']             = (string) $comprobante['Moneda']?: '';
-    $data['metodo_pago']        = (string) $comprobante['MetodoPago']?: '';
-    $data['forma_pago']         = (string) $comprobante['FormaPago']?: '';
-    $data['lugar_expedicion']   = (string) $comprobante['LugarExpedicion']?: '';
-    $data['no_certificado']     = (string) $comprobante['NoCertificado']?: '';
-    $data['condiciones_pago']   = (string) $comprobante?: '';
-    $data['exportacion']        = (string) $comprobante['Exportacion']?: '';
-    $data['tipo_comprobante']   = (string) $comprobante?: '';
-    $data['serie']              = (string) $comprobante?: '';
-    $data['folio']              = (string) $comprobante['Folio']?: '';
-    $data['emisor_nombre']      = (string) $emisor['Nombre']?: '';
-    $data['receptor_nombre']    = (string) $receptor['Nombre']?: '';
-    $data['receptor_uso_cfdi']  = (string) $receptor?: '';
-    $data['receptor_domicilio'] = (string) $receptor?: '';
-    $data['no_certificado_sat'] = (string) $timbre?: '';
-    $data['rfc_prov_certif']    = (string) $timbre?: '';
+    // atributos (ver nombres comunes, uso string cast)
+    $data = [];
+    $data['uuid']               = (string) $timbre['UUID'] ?: '';
+    $data['version']            = (string) $comprobante['Version'] ?: (string) $comprobante['version'] ?: '';
+    $data['fecha']              = (string) $comprobante['Fecha'] ?: (string) $comprobante['fecha'] ?: null;
+    $data['subtotal']           = (string) $comprobante['SubTotal'] ?: (string) $comprobante['subTotal'] ?: '0.00';
+    $data['total']              = (string) $comprobante['Total'] ?: (string) $comprobante['total'] ?: '0.00';
+    $data['moneda']             = (string) $comprobante['Moneda'] ?: '';
+    $data['metodo_pago']        = (string) $comprobante['MetodoPago'] ?: (string) $comprobante['metodoDePago'] ?: '';
+    $data['forma_pago']         = (string) $comprobante['FormaPago'] ?: (string) $comprobante['formaPago'] ?: '';
+    $data['lugar_expedicion']   = (string) $comprobante['LugarExpedicion'] ?: '';
+    $data['no_certificado']     = (string) $comprobante['NoCertificado'] ?: '';
+    $data['condiciones_pago']   = (string) $comprobante['CondicionesDePago'] ?: '';
+    $data['exportacion']        = (string) $comprobante['Exportacion'] ?: '';
+    $data['tipo_comprobante']   = (string) $comprobante['TipoDeComprobante'] ?: (string) $comprobante['tipoDeComprobante'] ?: '';
+    $data['serie']              = (string) $comprobante['Serie'] ?: '';
+    $data['folio']              = (string) $comprobante['Folio'] ?: '';
+
+    // emisor
+    $data['emisor_rfc']         = (string) $emisor['Rfc'] ?: (string) $emisor['RFC'] ?: '';
+    $data['emisor_nombre']      = (string) $emisor['Nombre'] ?: '';
+
+    // receptor
+    $data['receptor_rfc']       = (string) $receptor['Rfc'] ?: (string) $receptor['RFC'] ?: '';
+    $data['receptor_nombre']    = (string) $receptor['Nombre'] ?: '';
+    $data['receptor_uso_cfdi']  = (string) $receptor['UsoCFDI'] ?: (string) $receptor['Uso'] ?: '';
+    $data['receptor_domicilio'] = (string) $receptor['DomicilioFiscalReceptor'] ?: '';
+
+    // timbre adicional
+    $data['no_certificado_sat'] = (string) $timbre['NoCertificadoSAT'] ?: '';
+    $data['rfc_prov_certif']    = (string) $timbre['RfcProvCertif'] ?: '';
 
     return $data;
 }
 
-$results = ['success' => true, 'parsed' =>, 'errors' =>];
+// recibe archivos (xml o zip) - soporta múltiples via 'xmlFile' o 'zipFile'
+$results = ['success' => true, 'parsed' => [], 'errors' => []];
 
-if (empty($_FILES)) {
-    $results['success'] = false;
-    $results['message'] = "No se recibió ningún archivo.";
-    ob_end_clean(); // Limpiar buffer antes de la salida
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(400); // Bad Request
-    echo json_encode($results);
-    exit;
-}
-
-// Función para manejar un archivo XML temporal
+// function to handle single uploaded xml tmp file
 $handleXmlTmp = function($tmpPath, $originalName) use (&$results, $uploadTmpDir) {
-    //... (Tu función handleXmlTmp aquí, sin cambios)
     $contents = file_get_contents($tmpPath);
     $parsed = parseCfdiXmlString($contents);
     if (!$parsed) {
-        $results['errors'] = "Archivo no es CFDI válido: $originalName";
+        $results['errors'][] = "Archivo no es CFDI válido: $originalName";
         return;
     }
-    $tmpFilename = uniqid('cfdi_'). '.xml';
-    $destTmp = $uploadTmpDir. $tmpFilename;
+    // generar nombre temporal único y guardar
+    $tmpFilename = uniqid('cfdi_') . '.xml';
+    $destTmp = $uploadTmpDir . $tmpFilename;
     if (file_put_contents($destTmp, $contents) === false) {
-        $results['errors'] = "No se pudo guardar temporal: $originalName";
+        $results['errors'][] = "No se pudo guardar temporal: $originalName";
         return;
     }
+    // añadir info para el cliente (incluye ruta temporal para posterior guardado)
     $parsed['_tmp_file'] = $tmpFilename;
-    $results['parsed'] = $parsed;
+    $results['parsed'][] = $parsed;
 };
 
-// Procesamiento de archivos (sin cambios, ya era robusto)
-foreach ($_FILES as $inputName => $fileInfo) {
-    if (is_array($fileInfo['name'])) {
-        for ($i = 0; $i < count($fileInfo['name']); $i++) {
-            if ($fileInfo['error'][$i]!== UPLOAD_ERR_OK) continue;
-            $tmp = $fileInfo['tmp_name'][$i];
-            $name = $fileInfo['name'][$i];
+// revisión de archivos subidos por input xmlFile o zipFile
+if (!empty($_FILES)) {
+    foreach ($_FILES as $inputName => $fileInfo) {
+        // Soporta múltiples archivos por input (array)
+        if (is_array($fileInfo['name'])) {
+            $count = count($fileInfo['name']);
+            for ($i=0;$i<$count;$i++) {
+                if ($fileInfo['error'][$i] !== UPLOAD_ERR_OK) {
+                    $results['errors'][] = "Error subiendo archivo: ".$fileInfo['name'][$i];
+                    continue;
+                }
+                $tmp = $fileInfo['tmp_name'][$i];
+                $name = $fileInfo['name'][$i];
+                // tipo
+                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                if ($ext === 'xml') {
+                    // procesar xml
+                    $handleXmlTmp($tmp, $name);
+                } elseif ($ext === 'zip') {
+                    // extraer zip y buscar xmls
+                    $zip = new ZipArchive();
+                    if ($zip->open($tmp) === true) {
+                        for ($j=0; $j < $zip->numFiles; $j++) {
+                            $entry = $zip->getNameIndex($j);
+                            if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) !== 'xml') continue;
+                            $stream = $zip->getStream($entry);
+                            if (!$stream) {
+                                $results['errors'][] = "No se pudo leer el archivo dentro del zip: $entry";
+                                continue;
+                            }
+                            $contents = stream_get_contents($stream);
+                            fclose($stream);
+                            // parsear cada xml content
+                            $parsed = parseCfdiXmlString($contents);
+                            if (!$parsed) {
+                                $results['errors'][] = "XML dentro de ZIP no válido: $entry";
+                                continue;
+                            }
+                            $tmpFilename = uniqid('cfdi_') . '.xml';
+                            $destTmp = $uploadTmpDir . $tmpFilename;
+                            if (file_put_contents($destTmp, $contents) === false) {
+                                $results['errors'][] = "No se pudo guardar temporal xml de zip: $entry";
+                                continue;
+                            }
+                            $parsed['_tmp_file'] = $tmpFilename;
+                            $results['parsed'][] = $parsed;
+                        }
+                        $zip->close();
+                    } else {
+                        $results['errors'][] = "ZIP corrupto o no se pudo abrir: $name";
+                    }
+                } else {
+                    $results['errors'][] = "Tipo no soportado: $name";
+                }
+            }
+        } else {
+            // caso simple (no array)
+            if ($fileInfo['error'] !== UPLOAD_ERR_OK) {
+                $results['errors'][] = "Error subiendo archivo: ".$fileInfo['name'];
+                continue;
+            }
+            $tmp = $fileInfo['tmp_name'];
+            $name = $fileInfo['name'];
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if ($ext === 'xml') {
                 $handleXmlTmp($tmp, $name);
             } elseif ($ext === 'zip') {
                 $zip = new ZipArchive();
                 if ($zip->open($tmp) === true) {
-                    for ($j = 0; $j < $zip->numFiles; $j++) {
+                    for ($j=0; $j < $zip->numFiles; $j++) {
                         $entry = $zip->getNameIndex($j);
-                        if (strtolower(pathinfo($entry, PATHINFO_EXTENSION))!== 'xml') continue;
-                        $contents = $zip->getFromName($entry);
-                        if ($contents === false) continue;
-                        
-                        $parsed = parseCfdiXmlString($contents);
-                        if (!$parsed) {
-                            $results['errors'] = "XML dentro de ZIP no válido: $entry";
+                        if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) !== 'xml') continue;
+                        $stream = $zip->getStream($entry);
+                        if (!$stream) {
+                            $results['errors'][] = "No se pudo leer el archivo dentro del zip: $entry";
                             continue;
                         }
-                        $tmpFilename = uniqid('cfdi_'). '.xml';
-                        $destTmp = $uploadTmpDir. $tmpFilename;
-                        file_put_contents($destTmp, $contents);
+                        $contents = stream_get_contents($stream);
+                        fclose($stream);
+                        $parsed = parseCfdiXmlString($contents);
+                        if (!$parsed) {
+                            $results['errors'][] = "XML dentro de ZIP no válido: $entry";
+                            continue;
+                        }
+                        $tmpFilename = uniqid('cfdi_') . '.xml';
+                        $destTmp = $uploadTmpDir . $tmpFilename;
+                        if (file_put_contents($destTmp, $contents) === false) {
+                            $results['errors'][] = "No se pudo guardar temporal xml de zip: $entry";
+                            continue;
+                        }
                         $parsed['_tmp_file'] = $tmpFilename;
-                        $results['parsed'] = $parsed;
+                        $results['parsed'][] = $parsed;
                     }
                     $zip->close();
                 } else {
-                    $results['errors'] = "ZIP corrupto: $name";
+                    $results['errors'][] = "ZIP corrupto o no se pudo abrir: $name";
                 }
+            } else {
+                $results['errors'][] = "Tipo no soportado: $name";
             }
         }
     }
+} else {
+    ob_end_clean();
+    echo json_encode(["success" => false, "message" => "No se recibió ningún archivo"]);
+    exit;
 }
 
-// Limpiar cualquier salida accidental y enviar la respuesta JSON final
-ob_end_clean();
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode($results, JSON_UNESCAPED_UNICODE);
+ob_end_clean(); // limpiar posibles warnings/HTML
+try {
+    echo json_encode($results, JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    echo json_encode([
+        "success" => false,
+        "message" => "Error generando respuesta JSON",
+        "error"   => $e->getMessage()
+    ]);
+}
 exit;
