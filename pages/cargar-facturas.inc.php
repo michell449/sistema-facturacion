@@ -47,7 +47,7 @@
                                         <label for="zipFile" class="form-label">Subir archivo ZIP con varios CFDI</label>
                                         <input type="file" id="zipFile" class="form-control" accept=".zip">
                                     </div>
-                                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#cfdiModal">
+                                    <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#cfdiModal" onclick="enviarArchivosParse()">
                                         <i class="fas fa-upload"></i> Cargar Archivo
                                     </button>
                                 </form>
@@ -56,12 +56,6 @@
                     </div>
                 </div>
             </div>
-
-            
-
-
-
-
 
             <!-- Modal conexión SAT -->
             <div class="modal fade" id="modalSAT" tabindex="-1" aria-labelledby="modalSATLabel" aria-hidden="true">
@@ -142,30 +136,30 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="form-descarga-sat class=" row g-3">
+                            <form id="form-descarga1-1 class=" row g-3">
                                 <div>
                                     <div class="col-md-6">
                                         <label class="form-label">Tipo de facturas</label>
-                                        <select class="form-select" name="tipo_facturas">
+                                        <select class="form-select">
                                             <option value="emitidas">Emitidas</option>
                                             <option value="recibidas">Recibidas</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Tipo de solicitud</label>
-                                        <select class="form-select" name ="tipo_solicitud">
+                                        <select class="form-select" id="">
                                             <option value="cfdi">CFDI</option>
                                             <option value="metadata">Metadata</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
                                     <label class="form-label">Fecha inicio</label>
-                                    <input type="date" class="form-control" name="fecha_inicio" required >
+                                    <input type="date" class="form-control">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
                                     <label class="form-label">Fecha fin</label>
-                                    <input type="date" class="form-control" name="fecha_fin" required >
+                                    <input type="date" class="form-control">
                                 </div>
                                 <div class="col-12 text-end">
                                     <button type="submit" class="btn btn-success">
@@ -199,6 +193,9 @@
                                             <th>RFC Receptor</th>
                                             <th>Subtotal</th>
                                             <th>Total</th>
+                                            <th>Serie</th>
+                                            <th>Folio Fiscal</th>
+                                            <th>Estado UUID</th>
                                         </tr>
                                     </thead>
                                 </tbody>
