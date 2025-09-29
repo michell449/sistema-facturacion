@@ -1,0 +1,64 @@
+// ... el resto de tu HTML y modals ...
+
+            <!-- Facturas cargadas -->
+            <div class="card-header mt-3">
+                <h3 class="card-title">Facturas Cargadas</h3>
+            </div>
+            <?php
+            require_once __DIR__ . "/../config.php";
+            $result = $conn->query("SELECT * FROM facturas ORDER BY fecha DESC LIMIT 10");
+            echo '<div class="card-body table-responsive">';
+            echo '<table class="table table-hover text-center align-middle">';
+            echo '<thead class="table-info">';
+            echo '<tr>';
+            echo '<th>UUID</th>';
+            echo '<th>Serie</th>';
+            echo '<th>Folio</th>';
+            echo '<th>RFC Emisor</th>';
+            echo '<th>RFC Receptor</th>';
+            echo '<th>Emisor</th>';
+            echo '<th>Fecha Emisión</th>';
+            echo '<th>Uso CFDI</th>';
+            echo '<th>Subtotal</th>';
+            echo '<th>Total</th>';
+            echo '<th>Forma de Pago</th>';
+            echo '<th>Método de Pago</th>';
+            echo '<th>Archivos</th>';
+            echo '</tr>';
+            echo '</thead>';
+            echo '<tbody id="facturas-cargadas">';
+            while ($row = $result->fetch_assoc()) {
+                // Se construyen las rutas relativas para la descarga
+            	$xmlPath = '../../uploads/' . htmlspecialchars($row['xml_file']);
+            	$pdfPath = '../../uploads/' . htmlspecialchars($row['pdf_file']);
+
+            	echo '<tr>';
+            	echo '<td>' . htmlspecialchars($row['uuid']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['serie']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['folio']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['emisor_rfc']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['receptor_rfc']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['emisor_nombre']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['fecha']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['receptor_uso_cfdi']) . '</td>';
+            	echo '<td>$' . number_format((float)$row['subtotal'], 2) . '</td>';
+            	echo '<td>$' . number_format((float)$row['total'], 2) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['forma_pago']) . '</td>';
+            	echo '<td>' . htmlspecialchars($row['metodo_pago']) . '</td>';
+            	echo '<td>
+                        <a href="' . $pdfPath . '" class="text-danger" download title="Descargar PDF">
+                            <i class="fas fa-file-pdf fa-lg"></i>
+                        </a>
+                        <a href="' . $xmlPath . '" class="text-primary ms-2" download title="Descargar XML">
+                            <i class="fas fa-file-code fa-lg"></i>
+                        </a>
+                    </td>';
+            	echo '</tr>';
+            }
+            echo '</tbody>';
+            echo '</table>';
+            echo '</div>';
+            ?>
+        </div>
+    </div>
+</div>

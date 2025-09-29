@@ -236,7 +236,9 @@
             echo '</tr>';
             echo '</thead>';
             echo '<tbody id="facturas-cargadas">';
-            while ($row = $result->fetch_assoc()) {
+            while ($row = $result->fetch_assoc()) { 
+                $pdfPath = 'uploads/pdf/' . $row['pdf_file'];
+                $xmlPath = 'uploads/xml/' . $row['xml_file'];
                 echo '<tr>';
                 echo '<td>' . $row['uuid'] . '</td>';
                 echo '<td>' . $row['serie'] . '</td>';
@@ -251,9 +253,9 @@
                 echo '<td>' . $row['forma_pago'] . '</td>';
                 echo '<td>' . $row['metodo_pago'] . '</td>';
                 echo '<td>
-                        <a href="../uploads/xml/' . $row['xml_file'] . '" target="_blank">XML</a> | 
-                        <a href="../uploads/pdf/' . $row['pdf_file'] . '" target="_blank">PDF</a>
-                    </td>';
+                <a href="' . $pdfPath . '" class="text-danger" download title="Descargar PDF"> <i class="fas fa-file-pdf fa-lg">pdf</i></a>
+                <a href="' . $xmlPath . '" class="text-primary ms-2" download title="Descargar XML"> <i class="fas fa-file-code fa-lg">xml</i></a>
+                </td>';
                 echo '</tr>';
             }
             echo '</tbody>';

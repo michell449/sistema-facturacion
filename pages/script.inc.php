@@ -71,7 +71,7 @@ async function enviarArchivosParse() {
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error("⚠️ Respuesta cruda del servidor:", text);
+      console.error("Respuesta cruda del servidor:", text);
       alert("El servidor devolvió un error. Revisa la consola (F12).");
       return;
     }
@@ -176,7 +176,7 @@ btnConfirm.addEventListener('click', async () => {
     try {
       data = JSON.parse(text);
     } catch (e) {
-      console.error("⚠️ Respuesta cruda del servidor (guardar):", text);
+      console.error(" Respuesta cruda del servidor (guardar):", text);
       alert("El servidor devolvió un error al guardar. Revisa la consola.");
       return;
     }
@@ -196,7 +196,63 @@ btnConfirm.addEventListener('click', async () => {
 const modalFooter = cfdiModalEl.querySelector('.modal-footer');
 if (modalFooter) modalFooter.appendChild(btnConfirm);
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+const viewFilesModal = document.getElementById('viewFilesModal');
+if (viewFilesModal) {
+viewFilesModal.addEventListener('show.bs.modal', function (event) {
+// Elemento que activó el modal (la fila de la tabla)
+const row = event.relatedTarget;
 
+// Extraer información de los atributos data-*
+const pdfPath = row.getAttribute('data-pdf-path');
+const xmlPath = row.getAttribute('data-xml-path');
+const uuid = row.getAttribute('data-uuid');
+
+// Actualizar el título del modal
+const modalTitle = viewFilesModal.querySelector('.modal-title');
+modalTitle.textContent = 'Archivos de Factura: ' + uuid;
+
+// Actualizar el visor de PDF
+const pdfViewer = document.getElementById('pdf-viewer');
+pdfViewer.src = pdfPath;
+
+// Cargar y mostrar el contenido del XML
+const xmlViewer = document.getElementById('xml-viewer');
+xmlViewer.textContent = 'Cargando XML...';
+
+fetch(xmlPath)
+.then(response => {		if (!response.ok) {
+		throw new Error('No se pudo cargar el archivo XML. Código de estado: ' + response.status);
+		}
+		return response.text();
+	})
+	.then(data => {
+                    // Escapar caracteres especiales de HTML para mostrar el XML como texto plano
+		const escapedXml = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		xmlViewer.innerHTML = `<code class="language-xml">${escapedXml}</code>`;
+})
+	.catch(error => {
+xmlViewer.textContent = 'Error al cargar el archivo XML. Verifique que la ruta sea correcta: ' + xmlPath;
+		console.error('Error en fetch:', error);
+});
+
+// Asegurarse de que la pestaña de PDF esté activa al abrir
+const pdfTab = document.querySelector('#pdf-tab');
+if(pdfTab) {
+const tab = new bootstrap.Tab(pdfTab);
+	tab.show();
+}
+});
+
+        // Limpiar el iframe al cerrar el modal para detener la carga
+        viewFilesModal.addEventListener('hidden.bs.modal', function () {
+            const pdfViewer = document.getElementById('pdf-viewer');
+            pdfViewer.src = 'about:blank';
+        });
+}
+});
+</script>
 
 </body>
 <!--end::Body-->

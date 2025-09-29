@@ -1,0 +1,5 @@
+{
+    "require": {
+        "phpcfdi/cfditopdf": "^0.4.2"
+    }
+}
