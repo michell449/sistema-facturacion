@@ -23,6 +23,9 @@ class ComposerStaticInit93fdb20b88c77845dfe7e5534d22d977
         ),
         'P' => 
         array (
+            'PhpCfdi\\SatWsDescargaMasiva\\' => 28,
+            'PhpCfdi\\Rfc\\' => 12,
+            'PhpCfdi\\Credentials\\' => 20,
             'PhpCfdi\\CfdiToPdf\\' => 18,
             'PhpCfdi\\CfdiCleaner\\' => 20,
         ),
@@ -33,6 +36,8 @@ class ComposerStaticInit93fdb20b88c77845dfe7e5534d22d977
         'E' => 
         array (
             'Eclipxe\\XmlSchemaValidator\\' => 27,
+            'Eclipxe\\MicroCatalog\\' => 21,
+            'Eclipxe\\Enum\\' => 13,
         ),
         'C' => 
         array (
@@ -57,6 +62,18 @@ class ComposerStaticInit93fdb20b88c77845dfe7e5534d22d977
         array (
             0 => __DIR__ . '/..' . '/spipu/html2pdf/src',
         ),
+        'PhpCfdi\\SatWsDescargaMasiva\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpcfdi/sat-ws-descarga-masiva/src',
+        ),
+        'PhpCfdi\\Rfc\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpcfdi/rfc/src',
+        ),
+        'PhpCfdi\\Credentials\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpcfdi/credentials/src',
+        ),
         'PhpCfdi\\CfdiToPdf\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpcfdi/cfditopdf/src',
@@ -72,6 +89,14 @@ class ComposerStaticInit93fdb20b88c77845dfe7e5534d22d977
         'Eclipxe\\XmlSchemaValidator\\' => 
         array (
             0 => __DIR__ . '/..' . '/eclipxe/xmlschemavalidator/src',
+        ),
+        'Eclipxe\\MicroCatalog\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/eclipxe/micro-catalog/src',
+        ),
+        'Eclipxe\\Enum\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/eclipxe/enum/src',
         ),
         'CfdiUtils\\' => 
         array (

@@ -11,6 +11,8 @@ src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.11.0/browser/overlayscroll
   src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
 crossorigin="anonymous"></script>
 <!--end::Required Plugin(Bootstrap 5)--><!--begin::Required Plugin(AdminLTE)-->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src=""></script>
 <script src="js/adminlte.js"></script>
 <!--end::Required Plugin(AdminLTE)--><!--begin::OverlayScrollbars Configure-->
 <script>
@@ -196,6 +198,7 @@ btnConfirm.addEventListener('click', async () => {
 const modalFooter = cfdiModalEl.querySelector('.modal-footer');
 if (modalFooter) modalFooter.appendChild(btnConfirm);
 </script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 const viewFilesModal = document.getElementById('viewFilesModal');
@@ -254,8 +257,167 @@ const tab = new bootstrap.Tab(pdfTab);
 });
 </script>
 
-</body>
-<!--end::Body-->
 
-</html>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const modalSat = new bootstrap.Modal(document.getElementById('modalSAT'));
+    const modalDescarga = new bootstrap.Modal(document.getElementById('modalDescarga'));
+
+    // Autenticación con e.firma
+    const formAutenticacion = document.getElementById('form-autenticacion-efirma');
+    formAutenticacion.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(formAutenticacion);
+        
+        Swal.fire({
+            title: 'Autenticando...',
+            text: 'Por favor, espere mientras validamos su e.firma.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const response = await fetch('core/descarga-sat.php?action=autenticar', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message);
+            }
+
+            Swal.fire('¡Éxito!', `Autenticado correctamente para el RFC: ${result.rfc}`, 'success');
+            modalSat.hide();
+            modalDescarga.show();
+
+        } catch (error) {
+            Swal.fire('Error', error.message, 'error');
+        }
+    });
+
+
+    // Descarga de CFDI desde el SAT
+    const formDescarga = document.getElementById('form-descarga-sat');
+    formDescarga.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(formDescarga);
+        const data = Object.fromEntries(formData.entries());
+
+        if (!data.fecha_inicio || !data.fecha_fin) {
+            Swal.fire('Atención', 'Debe seleccionar una fecha de inicio y fin.', 'warning');
+            return;
+        }
+
+        try {
+            //Solicitar la descarga
+            Swal.fire({
+                title: 'Enviando Solicitud',
+                text: 'Conectando con el SAT para solicitar la descarga...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const solicitarResponse = await fetch('core/descarga-sat.php?action=solicitar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const solicitarResult = await solicitarResponse.json();
+            if (!solicitarResult.success) throw new Error(solicitarResult.message);
+            
+            const requestId = solicitarResult.requestId;
+
+            // Verificar el estado periódicamente 
+            await verificarSolicitud(requestId);
+
+        } catch (error) {
+            Swal.fire('Error en la solicitud', error.message, 'error');
+        }
+    });
+
+    async function verificarSolicitud(requestId) {
+        Swal.update({
+            title: 'Solicitud Aceptada',
+            text: `Verificando estado... (ID: ${requestId.substring(0, 15)}...)`
+        });
+
+        const interval = setInterval(async () => {
+            try {
+                const verificarResponse = await fetch('core/descarga-sat.php?action=verificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId })
+                });
+                const result = await verificarResponse.json();
+
+                if (!result.success) {
+                    throw new Error(result.message);
+                }
+
+                if (result.status === 3 && result.packageIds.length > 0) {
+                    clearInterval(interval);
+                    Swal.close();
+                    // Descargar paquetes
+                    await descargarPaquetes(result.packageIds);
+                } else if (result.status === 5) { 
+                    throw new Error('La solicitud fue rechazada o contiene un error.');
+                }
+                
+            } catch (error) {
+                clearInterval(interval);
+                Swal.fire('Error de Verificación', error.message, 'error');
+            }
+        }, 15000); // Verificar cada 15 segundos
+    }
+
+    async function descargarPaquetes(packageIds) {
+        Swal.fire({
+            title: 'Descargando Paquetes',
+            text: `Se encontraron ${packageIds.length} paquetes. Descargando 1 de ${packageIds.length}...`,
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        for (let i = 0; i < packageIds.length; i++) {
+            const packageId = packageIds[i];
+            Swal.update({
+                text: `Descargando paquete ${i + 1} de ${packageIds.length}...`
+            });
+            try {
+                const descargarResponse = await fetch('core/descarga-sat.php?action=descargar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ packageId })
+                });
+                const result = await descargarResponse.json();
+                if (!result.success) {
+                    console.warn(`Error al descargar el paquete ${packageId}: ${result.message}`);
+                }
+            } catch (error) {
+                console.warn(`Error de red al descargar el paquete ${packageId}: ${error.message}`);
+            }
+        }
+
+        Swal.fire({
+            icon: 'success',
+            title: '¡Descarga Completada!',
+            text: 'Todos los paquetes han sido descargados al servidor. Ahora deben ser procesados.',
+            confirmButtonText: 'Excelente'
+        }).then(() => {
+            modalDescarga.hide();
+            location.reload();
+        });
+    }
+});
+</script>
+
+ </body>
+
 

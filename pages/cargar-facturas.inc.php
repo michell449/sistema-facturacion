@@ -72,19 +72,19 @@
                         <div class="modal-body">
                             <ul class="nav nav-tabs mb-3" id="satTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#loginSAT" type="button" role="tab">
-                                        Acceso con RFC y Contraseña
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="efirma-tab" data-bs-toggle="tab" data-bs-target="#efirmaSAT" type="button" role="tab">
                                         Acceso con e.firma
                                     </button>
                                 </li>
+                                <!-- <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#loginSAT" type="button" role="tab">
+                                        Acceso con RFC y Contraseña
+                                    </button>
+                                </li> -->
                             </ul>
 
                             <div class="tab-content">
-                                <!-- Login normal -->
+                                <!-- Login normal
                                 <div class="tab-pane fade show active" id="loginSAT" role="tabpanel">
                                     <label class="form-label">RFC</label>
                                     <input type="text" class="form-control mb-3" placeholder="Ingrese su RFC">
@@ -95,33 +95,32 @@
                                         <input type="text" class="form-control" placeholder="Ingrese el captcha">
                                         <img src="#" alt="Captcha SAT" style="height:40px; border:1px solid #ced4da; border-radius:.25rem;">
                                     </div>
-                                </div>
+                                </div> -->
 
                                 <!-- Primera vez con e.firma -->
-                                <div class="tab-pane fade" id="efirmaSAT" role="tabpanel">
-                                    <div class="mb-3">
-                                        <label for="certificado" class="form-label">Archivo .cer</label>
-                                        <input type="file" id="certificado" class="form-control" accept=".cer">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="llave" class="form-label">Archivo .key</label>
-                                        <input type="file" id="llave" class="form-control" accept=".key">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="passwordFiel" class="form-label">Contraseña FIEL</label>
-                                        <input type="password" id="passwordFiel" class="form-control">
-                                    </div>
+                                <div class="tab-pane fade show active" id="efirmaSAT" role="tabpanel">
+                                    <form id="form-autenticacion-efirma">
+                                        <div class="mb-3">
+                                            <label for="cerFile" class="form-label">Archivo .cer</label>
+                                            <input type="file" id="cerFile" name="cerFile" class="form-control" accept=".cer" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="keyFile" class="form-label">Archivo .key</label>
+                                            <input type="file" id="keyFile" name="keyFile" class="form-control" accept=".key" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="passwordFiel" class="form-label">Contraseña FIEL</label>
+                                            <input type="password" id="passwordFiel" name="password" class="form-control" required>
+                                        </div>
+                                        <div class="modal-footer mt-3 p-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                Autenticar y Conectar
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Footer -->
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <!-- Simula conexión exitosa -->
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalDescarga" data-bs-dismiss="modal">
-                                Conectar
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -136,34 +135,32 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="form-descarga1-1 class=" row g-3">
-                                <div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Tipo de facturas</label>
-                                        <select class="form-select">
-                                            <option value="emitidas">Emitidas</option>
-                                            <option value="recibidas">Recibidas</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Tipo de solicitud</label>
-                                        <select class="form-select" id="">
-                                            <option value="cfdi">CFDI</option>
-                                            <option value="metadata">Metadata</option>
-                                        </select>
-                                    </div>
+                            <form id="form-descarga-sat" class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de facturas</label>
+                                    <select class="form-select" name="tipo_descarga" required>
+                                        <option value="recibidas">Recibidas</option>
+                                        <option value="emitidas">Emitidas</option>
+                                    </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de comprobante</label>
+                                    <select class="form-select" name="tipo_comprobante" required>
+                                        <option value="cfdi">CFDI</option>
+                                        <option value="metadata">Metadata</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label">Fecha inicio</label>
-                                    <input type="date" class="form-control">
+                                    <input type="date" class="form-control" name="fecha_inicio" required>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <label class="form-label">Fecha fin</label>
-                                    <input type="date" class="form-control">
+                                    <input type="date" class="form-control" name="fecha_fin" required>
                                 </div>
                                 <div class="col-12 text-end">
                                     <button type="submit" class="btn btn-success">
-                                        <i class="fas fa-download"></i> Descargar CFDI
+                                        <i class="fas fa-download"></i> Solicitar Descarga
                                     </button>
                                 </div>
                             </form>
@@ -171,6 +168,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- Modal para subir archivo xml y leer información -->
 
             <div class="modal fade r" id="cfdiModal" tabindex="-1" aria-labelledby="modalCfdi" aria-hidden="true">
@@ -236,7 +234,7 @@
             echo '</tr>';
             echo '</thead>';
             echo '<tbody id="facturas-cargadas">';
-            while ($row = $result->fetch_assoc()) { 
+            while ($row = $result->fetch_assoc()) {
                 $pdfPath = 'uploads/pdf/' . $row['pdf_file'];
                 $xmlPath = 'uploads/xml/' . $row['xml_file'];
                 echo '<tr>';
@@ -262,6 +260,4 @@
             echo '</table>';
             echo '</div>';
             ?>
-        </div>
-    </div>
-</div>
+        </div>l
