@@ -257,7 +257,7 @@ const tab = new bootstrap.Tab(pdfTab);
 });
 </script>
 
-
+// dsescarga desde el sat
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         try {
-            const response = await fetch('core/descarga-sat.php?action=autenticar', {
+            const response = await fetch('core/cargar-cfdi-sat.php?action=autenticar', {
                 method: 'POST',
                 body: formData
             });
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 didOpen: () => Swal.showLoading()
             });
 
-            const solicitarResponse = await fetch('core/descarga-sat.php?action=solicitar', {
+            const solicitarResponse = await fetch('core/cargar-cfdi-sat.php?action=solicitar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -334,7 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const requestId = solicitarResult.requestId;
 
-            // Verificar el estado periódicamente 
             await verificarSolicitud(requestId);
 
         } catch (error) {
@@ -343,39 +342,50 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function verificarSolicitud(requestId) {
-        Swal.update({
-            title: 'Solicitud Aceptada',
-            text: `Verificando estado... (ID: ${requestId.substring(0, 15)}...)`
-        });
+    Swal.update({
+        title: 'Solicitud Aceptada',
+        text: `Verificando estado... (ID: ${requestId.substring(0, 15)}...)`
+    });
 
-        const interval = setInterval(async () => {
-            try {
-                const verificarResponse = await fetch('core/descarga-sat.php?action=verificar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ requestId })
-                });
-                const result = await verificarResponse.json();
+    let attempts = 0;
+    const maxAttempts = 40; 
 
-                if (!result.success) {
-                    throw new Error(result.message);
-                }
+    const interval = setInterval(async () => {
+        if (attempts++ > maxAttempts) {
+            clearInterval(interval);
+            Swal.fire('Tiempo de espera agotado', 'La solicitud al SAT tardó demasiado en responder. Por favor, intente más tarde.', 'warning');
+            return;
+        }
 
-                if (result.status === 3 && result.packageIds.length > 0) {
-                    clearInterval(interval);
-                    Swal.close();
-                    // Descargar paquetes
-                    await descargarPaquetes(result.packageIds);
-                } else if (result.status === 5) { 
-                    throw new Error('La solicitud fue rechazada o contiene un error.');
-                }
-                
-            } catch (error) {
-                clearInterval(interval);
-                Swal.fire('Error de Verificación', error.message, 'error');
+        try {
+            const verificarResponse = await fetch('core/cargar-cfdi-sat.php?action=verificar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId })
+            });
+            const result = await verificarResponse.json();
+
+            if (!result.success) {
+                throw new Error(result.message);
             }
-        }, 15000); // Verificar cada 15 segundos
-    }
+
+            if (result.is_finished) {
+                clearInterval(interval);
+                
+                if (result.packageIds && result.packageIds.length > 0) {
+                    Swal.close();
+                    await descargarPaquetes(result.packageIds);
+                } else {
+                    Swal.fire('Proceso Terminado', 'La solicitud finalizó pero no se encontraron paquetes para descargar en el período seleccionado.', 'info');
+                }
+            }
+
+        } catch (error) {
+            clearInterval(interval);
+            Swal.fire('Error de Verificación', error.message, 'error');
+        }
+    }, 15000); 
+}
 
     async function descargarPaquetes(packageIds) {
         Swal.fire({
@@ -391,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 text: `Descargando paquete ${i + 1} de ${packageIds.length}...`
             });
             try {
-                const descargarResponse = await fetch('core/descarga-sat.php?action=descargar', {
+                const descargarResponse = await fetch('core/cargar-cfdi-sat.php?action=descargar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ packageId })

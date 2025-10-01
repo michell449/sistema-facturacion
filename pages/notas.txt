@@ -2,6 +2,8 @@ Librerias usadas
 
 instalar composer
 
+
+
 composer require phpcfdi/cfditopdf
 composer require phpcfdi/sat-ws-descarga-masiva
 
@@ -14,4 +16,20 @@ extension = zip
 extension = fileinfo
 extension = gettext
 
+
+
+
+
+
+
+
+
+use PhpCfdi\Credentials\Fiel;
+use PhpCfdi\SatWsDescargaMasiva\Service;
+use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceEndpoints;
+use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
+use PhpCfdi\SatWsDescargaMasiva\RequestBuilder;
+use PhpCfdi\SatWsDescargaMasiva\Shared\QueryParameters;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
+use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 

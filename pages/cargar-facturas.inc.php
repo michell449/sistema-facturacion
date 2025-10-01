@@ -142,14 +142,7 @@
                                         <option value="recibidas">Recibidas</option>
                                         <option value="emitidas">Emitidas</option>
                                     </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Tipo de comprobante</label>
-                                    <select class="form-select" name="tipo_comprobante" required>
-                                        <option value="cfdi">CFDI</option>
-                                        <option value="metadata">Metadata</option>
-                                    </select>
-                                </div>
+                                </div> 
                                 <div class="col-md-6">
                                     <label class="form-label">Fecha inicio</label>
                                     <input type="date" class="form-control" name="fecha_inicio" required>
