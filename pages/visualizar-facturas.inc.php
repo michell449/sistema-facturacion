@@ -119,59 +119,74 @@
             </form>
 
         </div>
-
-        <!-- Resultados -->
+        <!-- Facturas cargadas -->
         <div class="card-header mt-3">
-            <h3 class="card-title">Resultados de búsqueda</h3>
+            <h3 class="card-title">Facturas Cargadas</h3>
         </div>
-        <div class="card-body">
-            <table class="table table-hover text-center align-middle">
-                <thead class="table-info">
-                    <tr>
-                        <th>Folio</th>
-                        <th>Folio Fiscal (UUID)</th>
-                        <th>RFC Emisor</th>
-                        <th>RFC Receptor</th>
-                        <th>Razón Social</th>
-                        <th>Total</th>
-                        <th>Fecha Emisión</th>
-                        <th>Uso CFDI</th>
-                        <th>Forma de Pago</th>
-                        <th>Estado</th>
-                        <th>Archivos</th>
-                    </tr>
-                </thead>
-                <tbody id="facturas-filtradas">
-                    <tr>
-                        <td>256</td>
-                        <td>123e4567-e89b-12d3-a456-426614174000</td>
-                        <td>EKU9003173C9</td>
-                        <td>XAXX010101000</td>
-                        <td>Público en general</td>
-                        <td>$1,500.00</td>
-                        <td>2025-09-21</td>
-                        <td>G03</td>
-                        <td>03 - Transferencia</td>
-                        <td><span class="badge bg-success">Válida</span></td>
-                        <td><a href="#" class="btn btn-sm btn-secondary"><i class="fas fa-file-code bi-file-earmark-excel"></i></a>
-                            <a href="#" class="btn btn-sm btn-secondary"><i class="fas fa-file-pdf bi-file-earmark-pdf"></i></a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-end pagination-sm">
-                    <li class="page-item disabled">
-                        <a class="page-link">Anterior</a>
-                    </li>
-                    <li class="page-item"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+        <?php
+        require_once __DIR__ . "../../config.php";
+        $result = $conn->query("SELECT * FROM facturas ORDER BY fecha DESC LIMIT 10");
+        echo '<div class="card-body">';
+        echo '<table class="table table-hover text-center align-middle">';
+        echo '<thead class="table-info">';
+        echo '<tr>';
+        echo '<th>UUID</th>';
+        echo '<th>Fecha Emisión</th>';
+        echo '<th>Serie</th>';
+        echo '<th>Folio Fiscal</th>';
+        echo '<th>RFC Emisor</th>';
+        echo '<th>RFC Receptor</th>';
+        echo '<th>Razón Social</th>';
+        echo '<th>Tipo</th>';
+        echo '<th>Uso CFDI</th>';
+        echo '<th>Importe</th>';
+        echo '<th>Total</th>';
+        echo '<th>Forma de Pago</th>';
+        echo '<th>Metodo de Pago</th>';
+        echo '<th>Archivos</th>';
+        echo '</tr>';
+        echo '</thead>';
+        echo '<tbody id="facturas-cargadas">';
+        while ($row = $result->fetch_assoc()) {
+            $pdfPath = 'uploads/pdf/' . $row['pdf_file'];
+            $xmlPath = 'uploads/xml/' . $row['xml_file'];
+            echo '<tr>';
+            echo '<td>' . $row['uuid'] . '</td>';
+            echo '<td>' . $row['fecha'] . '</td>';
+            echo '<td>' . $row['serie'] . '</td>';
+            echo '<td>' . $row['folio'] . '</td>';
+            echo '<td>' . $row['emisor_rfc'] . '</td>';
+            echo '<td>' . $row['receptor_rfc'] . '</td>';
+            echo '<td>' . $row['emisor_nombre'] . '</td>';
+            echo '<td>' . $row['tipo_comprobante'] .'</td>';
+            echo '<td>' . $row['receptor_uso_cfdi'] . '</td>';
+            echo '<td>' . number_format($row['subtotal'], 2) . '</td>';
+            echo '<td>' . number_format($row['total'], 2) . '</td>';
+            echo '<td>' . $row['forma_pago'] . '</td>';
+            echo '<td>' . $row['metodo_pago'] . '</td>';
+            echo '<td>
+                <a href="' . $pdfPath . '" class="text-danger" download title="Descargar PDF"> <i class="fas fa-file-pdf fa-lg">pdf</i></a>
+                <a href="' . $xmlPath . '" class="text-primary ms-2" download title="Descargar XML"> <i class="fas fa-file-code fa-lg">xml</i></a>
+                </td>';
+            echo '</tr>';
+        }
+        echo '</tbody>';
+        echo '</table>';
+        echo '</div>';
+        ?>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-end pagination-sm">
+                <li class="page-item disabled">
+                    <a class="page-link">Anterior</a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
     </div>
+</div>
 </div>

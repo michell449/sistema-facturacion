@@ -198,7 +198,7 @@ btnConfirm.addEventListener('click', async () => {
 const modalFooter = cfdiModalEl.querySelector('.modal-footer');
 if (modalFooter) modalFooter.appendChild(btnConfirm);
 </script>
-
+//convertir archivo xml a pdf
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 const viewFilesModal = document.getElementById('viewFilesModal');

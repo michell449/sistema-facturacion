@@ -33,3 +33,32 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\QueryParameters;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 
+
+administracion de cfdi
+admin cfdi emitido
+ mostrar 
+- fecha
+- folio
+- emisor
+- rfc
+- tipo
+- importe
+- iva con impuesto
+- total
+- comision a
+- comision b
+- socio
+
+filtrar por 
+- fecha
+- folio
+- emisor
+- rfc
+- tipo
+
+ver si la comision ya fue pagado, pendienete.
+
+ver el pdf, mandar por correo el cfdi
+
+
+repórte por cliente, 
