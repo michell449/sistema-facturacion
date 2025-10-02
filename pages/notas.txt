@@ -62,3 +62,126 @@ ver el pdf, mandar por correo el cfdi
 
 
 repórte por cliente, 
+
+
+
+case 'descargar':
+    if (!$fiel) json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
+    if (empty($input['packageId'])) json_response(['success' => false, 'message' => 'Falta el ID del paquete.'], 400);
+
+    $downloadDir = __DIR__ . '/../uploads/tmp/';
+    $xmlDir = __DIR__ . '/../uploads/tmp/';
+    if (!is_dir($downloadDir)) mkdir($downloadDir, 0755, true);
+
+    $service = create_sat_service($fiel);
+
+    try {
+        $result = $service->download($input['packageId']);
+        $zipFile = $downloadDir . $input['packageId'] . '.zip';
+        file_put_contents($zipFile, $result->getPackageContent());
+    } catch (\Throwable $e) {
+        json_response([
+            'success' => false,
+            'message' => 'Error al descargar paquete del SAT: ' . $e->getMessage()
+        ], 500);
+    }
+
+    // Extraer CFDIs del ZIP
+    try {
+        $cfdiReader = CfdiPackageReader::createFromFile($zipFile);
+    } catch (OpenZipFileException $exception) {
+        json_response(['success' => false, 'message' => 'Error al abrir el ZIP: ' . $exception->getMessage()], 500);
+    }
+
+    $facturas = [];
+
+    foreach ($cfdiReader->cfdis() as $uuid => $content) {
+        $tmpFileName = $uuid . '-' . uniqid() . '.xml';
+        $tmpFilePath = $xmlDir . $tmpFileName;
+
+        if (!file_put_contents($tmpFilePath, $content)) {
+            continue; // si no se pudo guardar el XML, salta
+        }
+
+        // Cargar el XML como DOM para extraer datos
+        try {
+            $xml = new \SimpleXMLElement($content);
+            $namespaces = $xml->getNamespaces(true);
+            $xml->registerXPathNamespace('cfdi', $namespaces['cfdi']);
+
+            $comprobante = $xml;
+            $emisor = $xml->xpath('//cfdi:Emisor')[0] ?? null;
+            $receptor = $xml->xpath('//cfdi:Receptor')[0] ?? null;
+
+            $facturas[] = [
+                'uuid' => (string) $xml->xpath('//cfdi:Complemento/tfd:TimbreFiscalDigital')[0]['UUID'] ?? '',
+                'version' => (string) $comprobante['Version'] ?? '',
+                'fecha' => (string) $comprobante['Fecha'] ?? '',
+                'subtotal' => (float) $comprobante['SubTotal'] ?? 0.0,
+                'total' => (float) $comprobante['Total'] ?? 0.0,
+                'moneda' => (string) $comprobante['Moneda'] ?? '',
+                'metodo_pago' => (string) $comprobante['MetodoPago'] ?? '',
+                'forma_pago' => (string) $comprobante['FormaPago'] ?? '',
+                'lugar_expedicion' => (string) $comprobante['LugarExpedicion'] ?? '',
+                'no_certificado' => (string) $comprobante['NoCertificado'] ?? '',
+                'condiciones_pago' => (string) $comprobante['CondicionesDePago'] ?? '',
+                'exportacion' => (string) $comprobante['Exportacion'] ?? '',
+                'tipo_comprobante' => (string) $comprobante['TipoDeComprobante'] ?? '',
+                'emisor_rfc' => (string) $emisor['Rfc'] ?? '',
+                'emisor_nombre' => (string) $emisor['Nombre'] ?? '',
+                'emisor_regimen' => (string) $emisor['RegimenFiscal'] ?? '',
+                'receptor_rfc' => (string) $receptor['Rfc'] ?? '',
+                'receptor_nombre' => (string) $receptor['Nombre'] ?? '',
+                'receptor_domicilio' => '', // No siempre disponible
+                'receptor_regimen' => (string) $receptor['RegimenFiscalReceptor'] ?? '',
+                'receptor_uso_cfdi' => (string) $receptor['UsoCFDI'] ?? '',
+                'no_certificado_sat' => (string) $xml->xpath('//cfdi:Complemento/tfd:TimbreFiscalDigital')[0]['NoCertificadoSAT'] ?? '',
+                'rfc_prov_certif' => (string) $xml->xpath('//cfdi:Complemento/tfd:TimbreFiscalDigital')[0]['RfcProvCertif'] ?? '',
+                '_tmp_file' => basename($tmpFilePath),
+                'serie' => (string) $comprobante['Serie'] ?? '',
+                'folio' => (string) $comprobante['Folio'] ?? '',
+            ];
+        } catch (\Throwable $e) {
+            // No procesamos si falla el XML
+            error_log("Error al procesar XML $uuid: " . $e->getMessage());
+            continue;
+        }
+    }
+
+    // Enviar facturas a guardar-facturas.php
+    $response = null;
+    try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'http://localhost/app-m/core/guardar-facturas.php'); // Ajusta según tu ruta real
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['items' => $facturas]));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        $response = curl_exec($ch);
+        curl_close($ch);
+    } catch (\Throwable $e) {
+        json_response(['success' => false, 'message' => 'Error al enviar datos a guardar-facturas.php', 'error' => $e->getMessage()], 500);
+    }
+
+    json_response([
+        'success' => true,
+        'message' => 'Paquete procesado correctamente.',
+        'zipFile' => $zipFile,
+        'registro_response' => json_decode($response, true)
+    ]);
+    break;
+
+
+use CfdiUtils\Cfdi;
+use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
+use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
+use PhpCfdi\SatWsDescargaMasiva\Service;
+use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceEndpoints;
+use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
+use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
+use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;

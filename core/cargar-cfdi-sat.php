@@ -9,6 +9,7 @@ session_start();
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config.php';
 
+use CfdiUtils\Cfdi;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
 use PhpCfdi\SatWsDescargaMasiva\Service;
@@ -19,6 +20,9 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -90,41 +94,90 @@ try {
 
         // solicitar la descarga de CFDI
         case 'solicitar':
-            if (!$fiel) json_response(['success' => false, 'message' => 'Sesión no autenticada. Por favor, suba su e.firma de nuevo.'], 401);
+            if (!$fiel) {
+                json_response(['success' => false, 'message' => 'Sesión no autenticada. Por favor, suba su e.firma de nuevo.'], 401);
+            }
 
-            $startDate = new DateTime($input['fecha_inicio']);
-            $endDate = new DateTime($input['fecha_fin']);
+            // Validar estructura del JSON recibido
+            if (!is_array($input) || !isset($input['fecha_inicio'], $input['fecha_fin'])) {
+                json_response(['success' => false, 'message' => 'Datos de fecha no recibidos correctamente.'], 400);
+            }
 
-            // Determinar el endpoint del SAT
+            $fechaInicioStr = $input['fecha_inicio'];
+            $fechaFinStr = $input['fecha_fin'];
+
+            if ($fechaInicioStr >= $fechaFinStr) {
+                json_response(['success' => false, 'message' => 'La fecha de inicio debe ser menor que la fecha final.'], 400);
+            }
+
+            // Agrega horas para cubrir el día completo
+            $fechaInicio = $fechaInicioStr . ' 00:00:00';
+            $fechaFin = $fechaFinStr . ' 23:59:59';
+
+            try {
+                $period = DateTimePeriod::createFromValues($fechaInicio, $fechaFin);
+            } catch (\Throwable $e) {
+                json_response(['success' => false, 'message' => 'Error al procesar el rango de fechas: ' . $e->getMessage()], 400);
+            }
+
+            // Determinar el tipo de descarga
             $tipoDescarga = $input['tipo_descarga'] ?? 'recibidas';
             if (!in_array($tipoDescarga, ['recibidas', 'emitidas'])) {
                 json_response(['success' => false, 'message' => 'Tipo de descarga inválido.'], 400);
             }
+
             $service = create_sat_service($fiel);
 
             $downloadType = ($tipoDescarga === 'recibidas')
                 ? DownloadType::received()
                 : DownloadType::issued();
 
-            $period = DateTimePeriod::create($startDate, $endDate);
-
             $parameters = QueryParameters::create()
                 ->withPeriod($period)
-                ->withDownloadType(DownloadType::received());
+                ->withDownloadType($downloadType)
+                ->withDocumentStatus(DocumentStatus::active())
+                ->withRequestType(RequestType::xml());
 
-            $endpoints = ($tipoDescarga === 'recibidas' || $tipoDescarga === 'emitidas')
-                ? ServiceEndpoints::cfdi()
-                : ServiceEndpoints::retenciones();
+            $endpoints = ServiceEndpoints::cfdi();
 
-            $result = $service->query($parameters, $endpoints);
+            try {
+                $result = $service->query($parameters, $endpoints);
 
-            if (!$result->getStatus()->isAccepted()) {
-                json_response(['success' => false, 'message' => 'Solicitud rechazada por el SAT: ' . $result->getStatus()->getMessage()], 500);
+                // Logging para depurar si es necesario
+                error_log("Resultado de query al SAT:");
+                error_log("Status code: " . $result->getStatus()->getCode());
+                error_log("Mensaje: " . $result->getStatus()->getMessage());
+                error_log("Request ID: " . $result->getRequestId());
+
+                if (!$result->getStatus()->isAccepted()) {
+                    json_response([
+                        'success' => false,
+                        'message' => 'Solicitud rechazada por el SAT: ' . $result->getStatus()->getMessage()
+                    ], 500);
+                }
+
+                if (empty($result->getRequestId())) {
+                    error_log("El SAT devolvió un requestId vacío.");
+                    json_response(['success' => false, 'message' => 'El SAT no devolvió un ID de solicitud válido.'], 500);
+                }
+
+                // Guardar requestId en sesión si deseas usarlo luego
+                $_SESSION['requestId'] = $result->getRequestId();
+
+                json_response([
+                    'success' => true,
+                    'requestId' => $result->getRequestId(),
+                    'message' => 'Solicitud enviada al SAT con éxito.'
+                ]);
+            } catch (\Throwable $e) {
+                json_response([
+                    'success' => false,
+                    'message' => 'Error al consultar el SAT: ' . $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ], 500);
             }
-
-            $_SESSION['requestId'] = $result->getRequestId();
-            json_response(['success' => true, 'requestId' => $result->getRequestId(), 'message' => 'Solicitud enviada al SAT con éxito.']);
             break;
+
 
         // verificar el estado de la solicitud
         case 'verificar':
@@ -134,7 +187,7 @@ try {
             $service = create_sat_service($fiel);
             $result = $service->verify($input['requestId']);
             $status = $result->getStatus();
-            $isFinished = !$status->isAccepted();
+            $isFinished = !$status->isAccepted() || count($result->getPackagesIds()) > 0;
 
             json_response([
                 'success' => true,
@@ -150,7 +203,7 @@ try {
             if (!$fiel) json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
             if (empty($input['packageId'])) json_response(['success' => false, 'message' => 'Falta el ID del paquete.'], 400);
 
-            $downloadDir = __DIR__ . '/../uploads/sat_packages/';
+            $downloadDir = __DIR__ . '/../uploads/tmp/';
             if (!is_dir($downloadDir) && !mkdir($downloadDir, 0755, true)) {
                 json_response(['success' => false, 'message' => 'No se pudo crear el directorio de descargas.'], 500);
             }
