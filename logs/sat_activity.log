@@ -343,3 +343,8 @@
 [2025-10-03 23:48:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
 [2025-10-03 23:48:50] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
 [2025-10-03 23:49:17] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:49:23] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:49:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:49:48] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:50:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:50:24] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
