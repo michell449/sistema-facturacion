@@ -9,7 +9,6 @@ session_start();
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config.php';
 
-use CfdiUtils\Cfdi;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
 use PhpCfdi\SatWsDescargaMasiva\Service;
@@ -19,10 +18,7 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
-use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
-use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
-use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -40,10 +36,30 @@ function create_sat_service(Fiel $fiel): Service
     return new Service($requestBuilder, $webClient);
 }
 
+function log_sat_activity($message, $data = null)
+{
+    $logFile = __DIR__ . '/../logs/sat_activity.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $logMessage = "[$timestamp] $message";
+    
+    if ($data !== null) {
+        $logMessage .= " - " . json_encode($data);
+    }
+    
+    $logMessage .= "\n";
+    
+    $logDir = dirname($logFile);
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+    
+    file_put_contents($logFile, $logMessage, FILE_APPEND | LOCK_EX);
+}
+
 $action = $_GET['action'] ?? '';
 $input = json_decode(file_get_contents('php://input'), true);
 
-// Intenta recuperar la Fiel desde la sesión si ya fue autenticada
+// Intenta recuperar la FIEL desde la sesión
 $fiel = null;
 if (isset($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSION['fiel_passphrase'])) {
     try {
@@ -53,38 +69,35 @@ if (isset($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSIO
             $_SESSION['fiel_passphrase']
         );
     } catch (\Throwable $e) {
-        // La fiel en sesión es inválida, limpiar sesión
         session_destroy();
+        log_sat_activity("Error al recuperar FIEL de sesión", ['error' => $e->getMessage()]);
     }
 }
 
 try {
     switch ($action) {
-        // autenticar la e.firma
         case 'autenticar':
             if (
                 empty($_FILES['cerFile']) || $_FILES['cerFile']['error'] !== UPLOAD_ERR_OK ||
                 empty($_FILES['keyFile']) || $_FILES['keyFile']['error'] !== UPLOAD_ERR_OK ||
                 empty($_POST['password'])
             ) {
-                json_response(['success' => false, 'message' => 'Faltan archivos o contraseña, o hubo un error en la subida.'], 400);
+                json_response(['success' => false, 'message' => 'Faltan archivos o contraseña.'], 400);
             }
 
             $cerContent = file_get_contents($_FILES['cerFile']['tmp_name']);
             $keyContent = file_get_contents($_FILES['keyFile']['tmp_name']);
             $password = $_POST['password'];
 
-            // Validar la e.firma y desencripta la clave privada
             try {
                 $fielAutenticada = Fiel::create($cerContent, $keyContent, $password);
                 if (!$fielAutenticada->isValid()) {
-                    throw new \Exception('El certificado de la e.firma ha expirado o no es válido.');
+                    throw new \Exception('El certificado de la e.firma no es válido o ha expirado.');
                 }
             } catch (\Throwable $e) {
-                json_response(['success' => false, 'message' => 'La contraseña de la e.firma es incorrecta o los archivos están corruptos. Detalles: ' . $e->getMessage()], 401);
+                json_response(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 401);
             }
 
-            // Guardar el contenido de los archivos en sesión
             $_SESSION['fiel_cer_content'] = $cerContent;
             $_SESSION['fiel_key_content'] = $keyContent;
             $_SESSION['fiel_passphrase'] = $password;
@@ -92,41 +105,48 @@ try {
             json_response(['success' => true, 'message' => 'Autenticación exitosa.', 'rfc' => $fielAutenticada->getRfc()]);
             break;
 
-        // solicitar la descarga de CFDI
         case 'solicitar':
             if (!$fiel) {
-                json_response(['success' => false, 'message' => 'Sesión no autenticada. Por favor, suba su e.firma de nuevo.'], 401);
+                json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
             }
 
-            // Validar estructura del JSON recibido
             if (!is_array($input) || !isset($input['fecha_inicio'], $input['fecha_fin'])) {
+                log_sat_activity("Datos de fecha incompletos", $input);
                 json_response(['success' => false, 'message' => 'Datos de fecha no recibidos correctamente.'], 400);
             }
 
             $fechaInicioStr = $input['fecha_inicio'];
             $fechaFinStr = $input['fecha_fin'];
 
+            // Validaciones de fecha
             if ($fechaInicioStr >= $fechaFinStr) {
                 json_response(['success' => false, 'message' => 'La fecha de inicio debe ser menor que la fecha final.'], 400);
             }
 
-            // Agrega horas para cubrir el día completo
-            $fechaInicio = $fechaInicioStr . ' 00:00:00';
-            $fechaFin = $fechaFinStr . ' 23:59:59';
+            // Limitar el rango a máximo 1 mes para evitar timeouts
+            $fechaInicioDT = new DateTimeImmutable($fechaInicioStr . ' 00:00:00');
+            $fechaFinDT = new DateTimeImmutable($fechaFinStr . ' 23:59:59');
+            $diferenciaDias = $fechaFinDT->diff($fechaInicioDT)->days;
 
-            try {
-                $period = DateTimePeriod::createFromValues($fechaInicio, $fechaFin);
-            } catch (\Throwable $e) {
-                json_response(['success' => false, 'message' => 'Error al procesar el rango de fechas: ' . $e->getMessage()], 400);
+            if ($diferenciaDias > 31) {
+                json_response(['success' => false, 'message' => 'El rango de fechas no puede ser mayor a 31 días para evitar timeouts del SAT.'], 400);
             }
 
-            // Determinar el tipo de descarga
+            // Validar límite de 6 años
+            $limiteInferior = (new DateTimeImmutable())->modify('-6 years')->setTime(0, 0, 0);
+            if ($fechaInicioDT < $limiteInferior) {
+                json_response(['success' => false, 'message' => 'La fecha de inicio es anterior al límite permitido (6 años).'], 400);
+            }
+
+            $period = DateTimePeriod::createFromValues(
+                $fechaInicioDT->format('Y-m-d H:i:s'),
+                $fechaFinDT->format('Y-m-d H:i:s')
+            );
+
             $tipoDescarga = $input['tipo_descarga'] ?? 'recibidas';
             if (!in_array($tipoDescarga, ['recibidas', 'emitidas'])) {
                 json_response(['success' => false, 'message' => 'Tipo de descarga inválido.'], 400);
             }
-
-            $service = create_sat_service($fiel);
 
             $downloadType = ($tipoDescarga === 'recibidas')
                 ? DownloadType::received()
@@ -138,89 +158,196 @@ try {
                 ->withDocumentStatus(DocumentStatus::active())
                 ->withRequestType(RequestType::xml());
 
-            $endpoints = ServiceEndpoints::cfdi();
+            $service = create_sat_service($fiel);
+            
+            log_sat_activity("Iniciando solicitud al SAT", [
+                'fecha_inicio' => $fechaInicioStr,
+                'fecha_fin' => $fechaFinStr,
+                'tipo_descarga' => $tipoDescarga,
+                'dias_rango' => $diferenciaDias
+            ]);
+            
+            $result = $service->query($parameters, ServiceEndpoints::cfdi());
 
-            try {
-                $result = $service->query($parameters, $endpoints);
+            log_sat_activity("Respuesta de solicitud SAT", [
+                'status_code' => $result->getStatus()->getCode(),
+                'status_message' => $result->getStatus()->getMessage(),
+                'request_id' => $result->getRequestId()
+            ]);
 
-                // Logging para depurar si es necesario
-                error_log("Resultado de query al SAT:");
-                error_log("Status code: " . $result->getStatus()->getCode());
-                error_log("Mensaje: " . $result->getStatus()->getMessage());
-                error_log("Request ID: " . $result->getRequestId());
-
-                if (!$result->getStatus()->isAccepted()) {
-                    json_response([
-                        'success' => false,
-                        'message' => 'Solicitud rechazada por el SAT: ' . $result->getStatus()->getMessage()
-                    ], 500);
-                }
-
-                if (empty($result->getRequestId())) {
-                    error_log("El SAT devolvió un requestId vacío.");
-                    json_response(['success' => false, 'message' => 'El SAT no devolvió un ID de solicitud válido.'], 500);
-                }
-
-                // Guardar requestId en sesión si deseas usarlo luego
-                $_SESSION['requestId'] = $result->getRequestId();
-
-                json_response([
-                    'success' => true,
-                    'requestId' => $result->getRequestId(),
-                    'message' => 'Solicitud enviada al SAT con éxito.'
-                ]);
-            } catch (\Throwable $e) {
+            if (!$result->getStatus()->isAccepted()) {
                 json_response([
                     'success' => false,
-                    'message' => 'Error al consultar el SAT: ' . $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
+                    'message' => 'Solicitud rechazada: ' . $result->getStatus()->getMessage()
                 ], 500);
             }
+
+            $_SESSION['requestId'] = $result->getRequestId();
+            $_SESSION['fecha_inicio'] = $fechaInicioStr;
+            $_SESSION['fecha_fin'] = $fechaFinStr;
+
+            json_response([
+                'success' => true,
+                'requestId' => $result->getRequestId(),
+                'message' => 'Solicitud enviada al SAT con éxito.',
+                'dias_rango' => $diferenciaDias
+            ]);
             break;
 
-
-        // verificar el estado de la solicitud
         case 'verificar':
-            if (!$fiel) json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
-            if (empty($input['requestId'])) json_response(['success' => false, 'message' => 'Falta el ID de la solicitud.'], 400);
+            if (!$fiel) {
+                json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
+            }
+            
+            if (empty($input['requestId'])) {
+                if (empty($_SESSION['requestId'])) {
+                    json_response(['success' => false, 'message' => 'Falta el ID de la solicitud.'], 400);
+                }
+                $requestId = $_SESSION['requestId'];
+            } else {
+                $requestId = $input['requestId'];
+            }
+
+            log_sat_activity("Verificando solicitud", ['request_id' => $requestId]);
 
             $service = create_sat_service($fiel);
-            $result = $service->verify($input['requestId']);
+            $result = $service->verify($requestId);
+
             $status = $result->getStatus();
-            $isFinished = !$status->isAccepted() || count($result->getPackagesIds()) > 0;
+            $packageIds = $result->getPackagesIds();
+            
+            // Mejor lógica para determinar si está terminado
+            $isFinished = false;
+            $statusCode = $status->getCode();
+            
+            // Códigos que indican que la solicitud terminó
+            $codigosTerminados = [5000, 5001, 5002, 5003, 5004];
+            
+            if (in_array($statusCode, $codigosTerminados)) {
+                // Si tiene paquetes, está terminado y listo
+                if (count($packageIds) > 0) {
+                    $isFinished = true;
+                } 
+                // Si no tiene paquetes pero el mensaje indica terminado
+                elseif (strpos(strtolower($status->getMessage()), 'terminado') !== false || 
+                        strpos(strtolower($status->getMessage()), 'finalizado') !== false ||
+                        strpos(strtolower($status->getMessage()), 'completado') !== false) {
+                    $isFinished = true;
+                }
+                // Si es código 5000 pero ha pasado mucho tiempo, forzar como terminado
+                elseif ($statusCode === 5000) {
+                    // Verificar si ha pasado más de 10 minutos desde la solicitud
+                    if (isset($_SESSION['solicitud_timestamp'])) {
+                        $tiempoTranscurrido = time() - $_SESSION['solicitud_timestamp'];
+                        if ($tiempoTranscurrido > 600) { // 10 minutos
+                            $isFinished = true;
+                            log_sat_activity("Forzando terminación por timeout", [
+                                'request_id' => $requestId,
+                                'tiempo_transcurrido' => $tiempoTranscurrido
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            log_sat_activity("Resultado de verificación", [
+                'request_id' => $requestId,
+                'status_code' => $statusCode,
+                'status_message' => $status->getMessage(),
+                'is_finished' => $isFinished,
+                'package_count' => count($packageIds),
+                'package_ids' => $packageIds
+            ]);
 
             json_response([
                 'success' => true,
                 'is_finished' => $isFinished,
-                'status_code' => $status->getCode(),
+                'status_code' => $statusCode,
                 'message' => $status->getMessage(),
-                'packageIds' => $result->getPackagesIds(),
+                'packageIds' => $packageIds,
+                'requestId' => $requestId,
+                'has_packages' => count($packageIds) > 0
             ]);
             break;
 
-        // descargar un paquete 
         case 'descargar':
-            if (!$fiel) json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
-            if (empty($input['packageId'])) json_response(['success' => false, 'message' => 'Falta el ID del paquete.'], 400);
+            if (!$fiel) {
+                json_response(['success' => false, 'message' => 'Sesión no autenticada.'], 401);
+            }
+            
+            if (empty($input['packageId'])) {
+                json_response(['success' => false, 'message' => 'Falta el ID del paquete.'], 400);
+            }
 
             $downloadDir = __DIR__ . '/../uploads/tmp/';
-            if (!is_dir($downloadDir) && !mkdir($downloadDir, 0755, true)) {
-                json_response(['success' => false, 'message' => 'No se pudo crear el directorio de descargas.'], 500);
+            if (!is_dir($downloadDir)) {
+                mkdir($downloadDir, 0755, true);
             }
+
+            log_sat_activity("Descargando paquete", ['package_id' => $input['packageId']]);
 
             $service = create_sat_service($fiel);
             $result = $service->download($input['packageId']);
 
-            $zipFile = $downloadDir . $input['packageId'] . '.zip';
-            file_put_contents($zipFile, $result->getPackageContent());
+            if ($result->getStatus()) {
+                log_sat_activity("Paquete no encontrado", ['package_id' => $input['packageId']]);
+                json_response(['success' => false, 'message' => 'El paquete no fue encontrado en el SAT.'], 404);
+            }
 
-            json_response(['success' => true, 'message' => "Paquete " . $input['packageId'] . " descargado.", 'path' => $zipFile]);
+            if (!$result->getStatus()->isAccepted()) {
+                log_sat_activity("Error al descargar paquete", [
+                    'package_id' => $input['packageId'],
+                    'status' => $result->getStatus()->getMessage()
+                ]);
+                json_response(['success' => false, 'message' => 'Error al descargar: ' . $result->getStatus()->getMessage()], 500);
+            }
+
+            $zipFile = $downloadDir . $input['packageId'] . '.zip';
+            $bytesEscritos = file_put_contents($zipFile, $result->getPackageContent());
+
+            if ($bytesEscritos === false) {
+                log_sat_activity("Error al escribir archivo ZIP", ['package_id' => $input['packageId']]);
+                json_response(['success' => false, 'message' => 'Error al guardar el archivo en el servidor.'], 500);
+            }
+
+            log_sat_activity("Paquete descargado exitosamente", [
+                'package_id' => $input['packageId'],
+                'file' => basename($zipFile),
+                'size' => filesize($zipFile),
+                'bytes_escritos' => $bytesEscritos
+            ]);
+
+            json_response([
+                'success' => true, 
+                'message' => 'Descarga completada.', 
+                'file' => basename($zipFile),
+                'packageId' => $input['packageId'],
+                'file_size' => filesize($zipFile)
+            ]);
+            break;
+
+        case 'cancelar':
+            // Limpiar sesión
+            unset($_SESSION['requestId']);
+            unset($_SESSION['solicitud_timestamp']);
+            unset($_SESSION['fecha_inicio']);
+            unset($_SESSION['fecha_fin']);
+            
+            json_response([
+                'success' => true,
+                'message' => 'Solicitud cancelada correctamente.'
+            ]);
             break;
 
         default:
-            json_response(['success' => false, 'message' => 'Acción no válida.'], 400);
-            break;
+            json_response(['success' => false, 'message' => 'Acción no reconocida.'], 400);
     }
 } catch (\Throwable $e) {
-    json_response(['success' => false, 'message' => 'Error Crítico: ' . $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
+    log_sat_activity("Error general", [
+        'action' => $action,
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+    ]);
+    json_response(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
 }
+?>

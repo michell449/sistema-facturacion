@@ -1,0 +1,345 @@
+[2025-10-03 21:59:27] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-05","tipo_descarga":"emitidas"}
+[2025-10-03 21:59:30] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 21:59:30] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 21:59:35] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 21:59:39] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 21:59:44] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:00:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:00:11] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:00:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:00:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":404,"status_message":"Error no controlado.","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:01:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:01:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:01:29] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:01:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:01:37] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:01:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:02:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:02:07] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:02:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:02:39] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:03:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:03:14] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:03:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:03:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:04:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:04:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:04:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:04:39] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:05:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:05:07] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:05:34] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:05:41] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:05:41] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:05:46] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:06:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:06:08] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:06:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:06:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:07:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:07:07] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:07:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:07:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:08:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:08:08] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:08:36] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:08:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:09:06] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:09:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:09:52] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:09:58] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:10:03] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:10:06] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:10:06] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:10:11] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:10:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:10:41] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:11:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:11:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:11:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:11:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:12:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:12:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:12:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:12:41] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:13:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:13:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:13:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:13:41] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:14:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:14:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:14:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:14:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:15:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:15:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:15:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:15:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:16:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:16:11] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:16:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:16:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:17:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:17:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:17:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:17:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:18:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:18:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:18:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:18:39] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:18:43] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:18:47] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:19:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:19:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:19:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:19:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:20:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:20:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:20:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:20:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:21:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:21:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:21:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:21:40] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:22:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:22:11] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:22:11] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:22:15] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:22:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:22:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:23:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:23:11] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:23:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:23:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:24:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:24:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:24:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:24:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:25:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:25:08] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:25:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:25:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:26:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:26:09] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:26:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:26:37] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:27:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:27:10] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:27:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:27:38] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:28:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:28:06] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:28:35] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:28:41] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:29:05] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:29:07] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:29:44] Verificando solicitud - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655"}
+[2025-10-03 22:29:45] Resultado de verificación - {"request_id":"0dfddbb5-45da-4544-988b-14c122ee0655","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:30:10] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-29","tipo_descarga":"emitidas"}
+[2025-10-03 22:30:12] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:30:12] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:30:17] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:30:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:30:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:31:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:31:20] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:31:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:31:50] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:32:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:32:24] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:32:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:32:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:33:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:33:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:33:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:33:49] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:34:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:34:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:34:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:34:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:35:10] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:35:15] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:35:18] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:35:22] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:35:48] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:35:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:36:20] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:36:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:37:02] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:37:08] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:37:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:37:20] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:37:48] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:37:53] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:38:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:38:22] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:38:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:38:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:39:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:39:22] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:39:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:39:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:40:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:40:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:40:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:40:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:41:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:41:22] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:41:48] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:41:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:42:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:42:19] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:42:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:42:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:43:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:43:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:43:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:43:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:44:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:44:22] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:44:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:44:50] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:45:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:45:20] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:45:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:45:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:46:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:46:19] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:46:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:46:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:47:18] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:47:19] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:47:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:47:54] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:48:04] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:48:07] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:48:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:48:20] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:48:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:48:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:49:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:49:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:49:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:49:49] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:50:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:50:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:50:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:50:50] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:51:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:51:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:51:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:51:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:52:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:52:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:52:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:52:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:53:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:53:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:53:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:53:49] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:54:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:54:21] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:54:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:54:50] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:55:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:55:24] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:55:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:55:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:56:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:56:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:56:48] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:56:51] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:57:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:57:20] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:57:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:57:52] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:58:17] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:58:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:58:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:58:50] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:59:18] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:59:23] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 22:59:47] Verificando solicitud - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2"}
+[2025-10-03 22:59:49] Resultado de verificación - {"request_id":"2cdce114-d525-40df-b042-10848c58c5e2","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:25:32] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-15","tipo_descarga":"emitidas","dias_rango":14}
+[2025-10-03 23:25:34] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"e13571e8-0499-471d-848c-e991bfb3b903"}
+[2025-10-03 23:25:34] Verificando solicitud - {"request_id":"e13571e8-0499-471d-848c-e991bfb3b903"}
+[2025-10-03 23:25:39] Resultado de verificación - {"request_id":"e13571e8-0499-471d-848c-e991bfb3b903","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:26:10] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-15","tipo_descarga":"emitidas","dias_rango":14}
+[2025-10-03 23:26:12] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:26:12] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:26:17] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:26:24] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:26:27] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:26:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:26:49] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:27:17] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:27:20] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:27:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:27:49] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:28:17] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:28:19] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:28:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:28:49] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:29:17] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:29:21] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:29:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:29:49] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:30:17] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:30:20] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:30:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:30:49] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:31:17] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:31:23] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:31:47] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:31:52] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:32:18] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:32:20] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:33:19] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:33:23] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:34:20] Verificando solicitud - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64"}
+[2025-10-03 23:34:23] Resultado de verificación - {"request_id":"21d97f21-d4a8-4642-ad23-75ed3ff66e64","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:37:49] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-15","tipo_descarga":"emitidas","dias_rango":14}
+[2025-10-03 23:37:51] Respuesta de solicitud SAT - {"status_code":5002,"status_message":"Se han agotado las solicitudes de por vida","request_id":"7ea9e83f-914d-4e63-b152-3c4730d2a04f"}
+[2025-10-03 23:38:15] Iniciando solicitud al SAT - {"fecha_inicio":"2025-09-01","fecha_fin":"2025-09-15","tipo_descarga":"emitidas","dias_rango":14}
+[2025-10-03 23:38:16] Respuesta de solicitud SAT - {"status_code":5002,"status_message":"Se han agotado las solicitudes de por vida","request_id":"f96d804f-56b7-4c07-b038-573c14942d40"}
+[2025-10-03 23:39:59] Iniciando solicitud al SAT - {"fecha_inicio":"2021-01-01","fecha_fin":"2021-01-22","tipo_descarga":"emitidas","dias_rango":21}
+[2025-10-03 23:40:00] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:40:01] Verificando solicitud - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:40:05] Resultado de verificación - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:40:35] Verificando solicitud - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:40:36] Resultado de verificación - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e","status_code":404,"status_message":"Error no controlado.","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:41:05] Verificando solicitud - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:41:08] Resultado de verificación - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:41:35] Verificando solicitud - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:41:40] Resultado de verificación - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:42:05] Verificando solicitud - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e"}
+[2025-10-03 23:42:07] Resultado de verificación - {"request_id":"105fdc56-09eb-4bcd-a024-6eaa5493062e","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:42:44] Iniciando solicitud al SAT - {"fecha_inicio":"2021-01-01","fecha_fin":"2021-01-08","tipo_descarga":"emitidas","dias_rango":7}
+[2025-10-03 23:42:45] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:42:45] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:42:47] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:43:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:43:20] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:43:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:43:51] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:44:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:44:21] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:44:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:44:49] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:45:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:45:24] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:45:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:45:52] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:46:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:46:23] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:46:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:46:50] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:47:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:47:23] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:47:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:47:52] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:48:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:48:22] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:48:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:48:50] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:49:17] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}

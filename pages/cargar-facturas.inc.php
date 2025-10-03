@@ -84,20 +84,7 @@
                             </ul>
 
                             <div class="tab-content">
-                                <!-- Login normal
-                                <div class="tab-pane fade show active" id="loginSAT" role="tabpanel">
-                                    <label class="form-label">RFC</label>
-                                    <input type="text" class="form-control mb-3" placeholder="Ingrese su RFC">
-                                    <label class="form-label">Contraseña</label>
-                                    <input type="password" class="form-control mb-3" placeholder="Ingrese su contraseña">
-                                    <label class="form-label">Captcha</label>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="text" class="form-control" placeholder="Ingrese el captcha">
-                                        <img src="#" alt="Captcha SAT" style="height:40px; border:1px solid #ced4da; border-radius:.25rem;">
-                                    </div>
-                                </div> -->
 
-                                <!-- Primera vez con e.firma -->
                                 <div class="tab-pane fade show active" id="efirmaSAT" role="tabpanel">
                                     <form id="form-autenticacion-efirma">
                                         <div class="mb-3">
@@ -125,16 +112,27 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Modal descarga CFDI -->
+            <!-- Modal descarga CFDI - VERSIÓN MEJORADA -->
             <div class="modal fade" id="modalDescarga" tabindex="-1" aria-labelledby="modalDescargaLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalDescargaLabel">Descargar CFDI desde SAT</h5>
+                            <h5 class="modal-title" id="modalDescargaLabel">
+                                <i class="fas fa-download me-2"></i>Descargar CFDI desde SAT
+                            </h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Recomendaciones para mejor rendimiento:</strong><br>
+                                    • Use rangos máximos de 15-31 días<br>
+                                    • Evite períodos muy amplios<br>
+                                    • El SAT puede tardar varios minutos en procesar
+                                </small>
+                            </div>
+
                             <form id="form-descarga-sat" class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Tipo de facturas</label>
@@ -142,18 +140,28 @@
                                         <option value="recibidas">Recibidas</option>
                                         <option value="emitidas">Emitidas</option>
                                     </select>
-                                </div> 
+                                </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Fecha inicio</label>
-                                    <input type="date" class="form-control" name="fecha_inicio" required>
+                                    <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio" required
+                                        max="<?= date('Y-m-d') ?>">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Fecha fin</label>
-                                    <input type="date" class="form-control" name="fecha_fin" required>
+                                    <input type="date" class="form-control" name="fecha_fin" id="fecha_fin" required
+                                        max="<?= date('Y-m-d') ?>">
+                                </div>
+                                <div class="col-12">
+                                    <div id="fecha-validation" class="text-danger small" style="display: none;">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>La fecha de inicio debe ser menor que la fecha final.
+                                    </div>
+                                    <div id="fecha-info" class="text-muted small mt-1">
+                                        <span id="dias-rango">0 días seleccionados</span>
+                                    </div>
                                 </div>
                                 <div class="col-12 text-end">
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="fas fa-download"></i> Solicitar Descarga
+                                    <button type="submit" class="btn btn-success" id="btn-solicitar">
+                                        <i class="fas fa-download me-1"></i> Solicitar Descarga
                                     </button>
                                 </div>
                             </form>
@@ -161,6 +169,72 @@
                     </div>
                 </div>
             </div>
+
+            <script>
+                // Validación mejorada de fechas
+                document.addEventListener('DOMContentLoaded', function() {
+                    const fechaInicio = document.getElementById('fecha_inicio');
+                    const fechaFin = document.getElementById('fecha_fin');
+                    const validationMsg = document.getElementById('fecha-validation');
+                    const fechaInfo = document.getElementById('dias-rango');
+                    const btnSolicitar = document.getElementById('btn-solicitar');
+
+                    function calculateDays() {
+                        if (fechaInicio.value && fechaFin.value) {
+                            const start = new Date(fechaInicio.value);
+                            const end = new Date(fechaFin.value);
+                            const diffTime = Math.abs(end - start);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                            fechaInfo.textContent = `${diffDays} días seleccionados`;
+
+                            // Color según el rango
+                            if (diffDays > 31) {
+                                fechaInfo.className = 'text-danger';
+                                fechaInfo.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${diffDays} días - Rango muy amplio (máx. 31 días)`;
+                            } else if (diffDays > 15) {
+                                fechaInfo.className = 'text-warning';
+                                fechaInfo.innerHTML = `<i class="fas fa-info-circle me-1"></i>${diffDays} días - Rango amplio`;
+                            } else {
+                                fechaInfo.className = 'text-success';
+                                fechaInfo.innerHTML = `<i class="fas fa-check-circle me-1"></i>${diffDays} días - Rango óptimo`;
+                            }
+
+                            return diffDays;
+                        }
+                        return 0;
+                    }
+
+                    function validateDates() {
+                        if (fechaInicio.value && fechaFin.value) {
+                            const diffDays = calculateDays();
+
+                            if (fechaInicio.value >= fechaFin.value) {
+                                validationMsg.style.display = 'block';
+                                btnSolicitar.disabled = true;
+                                return false;
+                            } else if (diffDays > 31) {
+                                validationMsg.style.display = 'none';
+                                btnSolicitar.disabled = true;
+                                return false;
+                            } else {
+                                validationMsg.style.display = 'none';
+                                btnSolicitar.disabled = false;
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    if (fechaInicio && fechaFin) {
+                        fechaInicio.addEventListener('change', validateDates);
+                        fechaFin.addEventListener('change', validateDates);
+
+                        // Calcular días inicialmente si hay valores
+                        setTimeout(calculateDays, 100);
+                    }
+                });
+            </script>
 
             <!-- Modal para subir archivo xml y leer información -->
 
