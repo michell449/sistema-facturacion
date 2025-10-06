@@ -90,7 +90,6 @@
         cfdiReviewBody.innerHTML = '';
         cfdiParseErrors.innerText = '';
 
-        // poblar filas
         data.parsed.forEach((item, idx) => {
           const tr = document.createElement('tr');
           const chk = document.createElement('input');
@@ -170,7 +169,7 @@
       }
 
       try {
-        const res = await fetch('core/guardar-facturas.php', {
+        const res = await fetch('core/lista-facturas-cargadas.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -205,15 +204,86 @@
     const modalFooter = cfdiModalEl.querySelector('.modal-footer');
     if (modalFooter) modalFooter.appendChild(btnConfirm);
 
-    // Script cargar cfdi desde sat - VERSIÓN MEJORADA
+    async function cargarFacturas() {
+  const tbody = document.getElementById('facturas-cargadas');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="13">Cargando...</td></tr>';
+
+  try {
+    const res = await fetch('core/lista-facturas-cargadas.php');
+    const data = await res.json();
+
+    tbody.innerHTML = ''; // limpiar
+
+    if (data.success && data.data.length > 0) {
+      data.data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.uuid}</td>
+          <td>${row.serie}</td>
+          <td>${row.folio}</td>
+          <td>${row.emisor_rfc}</td>
+          <td>${row.receptor_rfc}</td>
+          <td>${row.emisor_nombre}</td>
+          <td>${row.fecha}</td>
+          <td>${row.receptor_uso_cfdi}</td>
+          <td>${row.subtotal}</td>
+          <td>${row.total}</td>
+          <td>${row.forma_pago}</td>
+          <td>${row.metodo_pago}</td>
+          <td>
+            <a href="uploads/pdf/${row.pdf_file}" class="text-danger" download title="Descargar PDF">
+              <i class="fas fa-file-pdf fa-lg"></i> pdf
+            </a>
+            <a href="uploads/xml/${row.xml_file}" class="text-primary ms-2" download title="Descargar XML">
+              <i class="fas fa-file-code fa-lg"></i> xml
+            </a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = '<tr><td colspan="13">No se encontraron facturas</td></tr>';
+    }
+  } catch (err) {
+    console.error('Error cargando facturas:', err);
+    tbody.innerHTML = '<tr><td colspan="13">Error al cargar las facturas</td></tr>';
+  }
+}
+
+// Llamar al cargar la página
+document.addEventListener('DOMContentLoaded', cargarFacturas);
+    //fin para carga manual de xml
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    // Script cargar cfdi desde sat 
+
     document.addEventListener('DOMContentLoaded', () => {
       const modalSat = new bootstrap.Modal(document.getElementById('modalSAT'));
       const modalDescarga = new bootstrap.Modal(document.getElementById('modalDescarga'));
       let verificationInterval = null;
       let currentRequestId = null;
+      let autenticadoRFC = null;
 
-      // Autenticación con e.firma (sin cambios)
       const formAutenticacion = document.getElementById('form-autenticacion-efirma');
+      const formDescarga = document.getElementById('form-descarga-sat');
+      const tipoDescargaSelect = document.querySelector('select[name="tipo_descarga"]');
+      const rfcInput = document.querySelector('input[name="rfc"]');
+
+      function actualizarRFCPorTipo(tipo) {
+        if (!autenticadoRFC) return;
+
+        if (tipo === 'emitidas' || tipo === 'recibidas') {
+          rfcInput.value = autenticadoRFC;
+        }
+      }
+
+      tipoDescargaSelect.addEventListener('change', (e) => {
+        actualizarRFCPorTipo(e.target.value);
+      });
+
       formAutenticacion.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(formAutenticacion);
@@ -228,7 +298,7 @@
         });
 
         try {
-          const response = await fetch('core/cargar-cfdi-sat.php?action=autenticar', {
+          const response = await fetch('/core/autenticar_sat.php', {
             method: 'POST',
             body: formData
           });
@@ -239,21 +309,25 @@
             throw new Error(result.message);
           }
 
-          Swal.fire('¡Éxito!', `Autenticado correctamente para el RFC: ${result.rfc}`, 'success');
+          autenticadoRFC = result.rfc; // Guardar RFC autenticado
+
+          Swal.fire('¡Éxito!', `Autenticado correctamente para el RFC: ${autenticadoRFC}`, 'success');
+
           modalSat.hide();
           modalDescarga.show();
+
+          // Prellenar RFC al mostrar el modal
+          const tipoActual = tipoDescargaSelect.value;
+          actualizarRFCPorTipo(tipoActual);
 
         } catch (error) {
           Swal.fire('Error', error.message, 'error');
         }
       });
 
-      // Descarga de CFDI desde el SAT - MEJORADO
-      const formDescarga = document.getElementById('form-descarga-sat');
       formDescarga.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // Detener cualquier verificación previa
         if (verificationInterval) {
           clearInterval(verificationInterval);
           verificationInterval = null;
@@ -265,8 +339,6 @@
         const fechaInicio = new Date(data.fecha_inicio);
         const fechaFin = new Date(data.fecha_fin);
 
-        console.log("Datos enviados:", data);
-
         if (fechaInicio >= fechaFin) {
           Swal.fire('Rango de fechas inválido', 'La fecha de inicio debe ser menor que la fecha final.', 'warning');
           return;
@@ -277,7 +349,6 @@
           return;
         }
 
-        // Validar rango máximo de 31 días
         const diffTime = Math.abs(fechaFin - fechaInicio);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -286,18 +357,17 @@
             icon: 'warning',
             title: 'Rango muy amplio',
             html: `El rango de <strong>${diffDays} días</strong> es demasiado amplio y puede causar timeouts.<br><br>
-                       <strong>Recomendación:</strong> Divida la consulta en rangos máximos de 31 días.`,
+               <strong>Recomendación:</strong> Divida la consulta en rangos máximos de 31 días.`,
             confirmButtonText: 'Entendido'
           });
           return;
         }
 
         try {
-          // Solicitar la descarga
           Swal.fire({
             title: 'Enviando Solicitud',
             html: `Conectando con el SAT...<br>
-                       <small>Rango: ${data.fecha_inicio} al ${data.fecha_fin} (${diffDays} días)</small>`,
+               <small>Rango: ${data.fecha_inicio} al ${data.fecha_fin} (${diffDays} días)</small>`,
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
           });
@@ -311,55 +381,62 @@
           });
 
           const solicitarResult = await solicitarResponse.json();
-          console.log("Respuesta de 'solicitar':", solicitarResult);
 
           if (!solicitarResult.success) {
             throw new Error(solicitarResult.message);
           }
 
           currentRequestId = solicitarResult.requestId;
-          console.log("Request ID recibido del SAT:", currentRequestId);
 
           if (!currentRequestId || currentRequestId.length < 10) {
             throw new Error("No se recibió un ID de solicitud válido del SAT.");
           }
 
-          // Iniciar verificación mejorada
-          await verificarSolicitudMejorado(currentRequestId, diffDays);
+          await verificarSolicitud(currentRequestId, diffDays);
 
         } catch (error) {
           Swal.fire('Error en la solicitud', error.message, 'error');
         }
       });
 
-      // Función de verificación MEJORADA
-      async function verificarSolicitudMejorado(requestId, diffDays) {
-        console.log("Iniciando verificación mejorada con requestId:", requestId);
+      async function verificarSolicitud(requestId, diffDays) {
+        const estadoSolicitudMap = {
+          1: "Aceptada",
+          2: "En proceso",
+          3: "Terminada",
+          4: "Error",
+          5: "Rechazada",
+          6: "Vencida"
+        };
+
+        const codEstatusMap = {
+          300: "Usuario No Válido",
+          301: "XML Mal Formado",
+          302: "Sello Mal Formado",
+          303: "Sello no corresponde con RFC",
+          304: "Certificado Revocado o Caduco",
+          305: "Certificado Inválido",
+          5000: "Solicitud recibida con éxito",
+          5003: "Tope máximo de elementos",
+          5004: "No se encontró la información",
+          5011: "Límite de descargas por día"
+        };
 
         let attempts = 0;
-        const maxAttempts = 30; // Máximo 15 minutos (30 intentos * 30 segundos)
-        const checkInterval = 30000; // 30 segundos
+        const maxAttempts = 30;
+        const checkInterval = 30000;
         let startTime = Date.now();
 
         Swal.fire({
           title: 'Verificando Estado SAT',
-          html: `⌛ Consulta en proceso...<br>
-                   <small>ID: ${requestId.substring(0, 20)}...</small><br>
-                   <small>Rango: ${diffDays} días | Intento: 1/${maxAttempts}</small>`,
+          html: `Consulta en proceso...<br><small>ID: ${requestId.substring(0, 20)}...</small>`,
           allowOutsideClick: false,
           showConfirmButton: true,
           confirmButtonText: 'Cancelar Consulta',
-          showCancelButton: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
+          didOpen: () => Swal.showLoading()
         }).then((result) => {
-          if (result.isConfirmed) {
-            // Usuario canceló manualmente
-            if (verificationInterval) {
-              clearInterval(verificationInterval);
-              verificationInterval = null;
-            }
+          if (result.isConfirmed && verificationInterval) {
+            clearInterval(verificationInterval);
             cancelarSolicitud(requestId);
           }
         });
@@ -371,11 +448,10 @@
               icon: 'warning',
               title: 'Tiempo de espera agotado',
               html: `El SAT no respondió en el tiempo esperado.<br><br>
-                           <strong>Solución:</strong><br>
-                           • Intente con un rango de fechas más pequeño<br>
-                           • Espere unos minutos e intente verificar nuevamente<br>
-                           • El SAT puede estar congestionado`,
-              confirmButtonText: 'Entendido'
+           <strong>Recomendaciones:</strong><br>
+           • Intente con un rango más pequeño<br>
+           • Espere unos minutos<br>
+           • El SAT puede estar saturado`
             });
             return;
           }
@@ -395,102 +471,56 @@
             });
 
             const result = await verificarResponse.json();
-            console.log(`Intento ${attempts}/${maxAttempts}:`, result);
 
-            if (!result.success) {
-              throw new Error(result.message);
-            }
+            if (!result.success) throw new Error(result.message);
 
-            // Actualizar interfaz con información detallada
+            const estadoDescripcion = estadoSolicitudMap[result.estadoSolicitud] || "❓ Estado desconocido";
+            const codigoDescripcion = codEstatusMap[result.status_code] || "⚠️ Código desconocido";
+
             Swal.update({
-              html: `⌛ ${result.message}<br>
-                           <small>ID: ${requestId.substring(0, 20)}...</small><br>
-                           <small>Rango: ${diffDays} días | Intento: ${attempts}/${maxAttempts}</small><br>
-                           <small>Tiempo transcurrido: ${elapsedMinutes} min</small><br>
-                           <small>Estado: ${result.status_code} - ${result.message}</small>`
+              html: `
+            <strong>Estado:</strong> ${estadoDescripcion}<br>
+            <strong>Código SAT:</strong> ${result.status_code || '-'}<br>
+            <small>${codigoDescripcion}</small><br><br>
+            <small>ID: ${requestId.substring(0, 20)}...</small><br>
+            <small>Intento: ${attempts}/${maxAttempts}</small><br>
+            <small>Tiempo transcurrido: ${elapsedMinutes} min</small>
+          `
             });
 
-            // Lógica mejorada para determinar si continuar
             if (result.is_finished) {
               clearInterval(verificationInterval);
 
-              if (result.has_packages && result.packageIds.length > 0) {
+              if (result.has_packages && result.packageIds?.length > 0) {
                 Swal.close();
                 await descargarPaquetes(result.packageIds);
               } else {
                 Swal.fire({
                   icon: 'info',
                   title: 'Consulta Finalizada',
-                  html: `El SAT completó la consulta pero <strong>no se encontraron CFDI</strong> en el período seleccionado.<br><br>
-                                   <strong>Posibles causas:</strong><br>
-                                   • No hay CFDI en el rango de fechas<br>
-                                   • Los CFDI pueden estar cancelados<br>
-                                   • El RFC no emitió/recibió CFDI en ese período`,
+                  html: `El SAT completó la consulta pero no se encontraron CFDI.<br><br>
+               Estado final: <strong>${estadoDescripcion}</strong><br>
+               Detalle: ${codigoDescripcion}`,
                   confirmButtonText: 'Entendido'
                 });
               }
-              return;
-            }
-
-            // Si ha pasado mucho tiempo y sigue en proceso, sugerir cancelar
-            if (elapsedMinutes > 10 && attempts > 15) {
-              Swal.update({
-                html: `⚠️ El SAT está tardando más de lo usual<br>
-                               <small>ID: ${requestId.substring(0, 20)}...</small><br>
-                               <small>Tiempo transcurrido: ${elapsedMinutes} min</small><br><br>
-                               <strong>Recomendación:</strong> Cancele e intente con un rango más pequeño`,
-                showConfirmButton: true,
-                confirmButtonText: 'Cancelar Consulta'
-              });
             }
 
           } catch (error) {
-            console.error("Error en verificación:", error);
             clearInterval(verificationInterval);
-
             Swal.fire({
               icon: 'error',
               title: 'Error de Verificación',
-              html: `No se pudo verificar el estado con el SAT.<br><br>
-                           <strong>Error:</strong> ${error.message}<br><br>
-                           <strong>Solución:</strong><br>
-                           • Verifique su conexión a internet<br>
-                           • Espere unos minutos e intente nuevamente<br>
-                           • El servicio del SAT puede estar temporalmente no disponible`,
+              html: `No se pudo verificar con el SAT.<br><br><strong>Error:</strong> ${error.message}`,
               confirmButtonText: 'Entendido'
             });
           }
         };
 
-        // Realizar primera verificación inmediatamente
         await performVerification();
-
-        // Configurar intervalo para verificaciones posteriores
         verificationInterval = setInterval(performVerification, checkInterval);
-
-        // Timeout global de respaldo
-        setTimeout(() => {
-          if (verificationInterval) {
-            clearInterval(verificationInterval);
-            verificationInterval = null;
-
-            if (Swal.isVisible()) {
-              Swal.fire({
-                icon: 'warning',
-                title: 'Consulta Excedió el Tiempo Límite',
-                html: `La consulta ha superado el tiempo máximo de espera.<br><br>
-                               <strong>Recomendaciones:</strong><br>
-                               • Divida el rango de fechas en períodos más pequeños<br>
-                               • Intente nuevamente en unos minutos<br>
-                               • Consulte períodos de máximo 15 días para mejor rendimiento`,
-                confirmButtonText: 'Entendido'
-              });
-            }
-          }
-        }, maxAttempts * checkInterval + 60000);
       }
 
-      // Función para cancelar solicitud
       async function cancelarSolicitud(requestId) {
         try {
           const response = await fetch('core/cargar-cfdi-sat.php?action=cancelar', {
@@ -518,10 +548,7 @@
         }
       }
 
-      // Función descargarPaquetes (sin cambios mayores)
       async function descargarPaquetes(packageIds) {
-        console.log("Iniciando descarga de paquetes:", packageIds);
-
         const downloadResults = {
           success: [],
           failed: []
@@ -533,7 +560,7 @@
           Swal.fire({
             title: `Descargando Paquetes`,
             html: `Procesando paquete <strong>${i + 1} de ${packageIds.length}</strong><br>
-                       <small>ID: ${packageId.substring(0, 20)}...</small>`,
+               <small>ID: ${packageId.substring(0, 20)}...</small>`,
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
           });
@@ -556,13 +583,11 @@
                 packageId,
                 file: result.file
               });
-              console.log(`Paquete ${packageId} descargado exitosamente`);
             } else {
               downloadResults.failed.push({
                 packageId,
                 error: result.message
               });
-              console.warn(`Error al descargar ${packageId}:`, result.message);
             }
 
           } catch (error) {
@@ -570,11 +595,9 @@
               packageId,
               error: error.message
             });
-            console.error(`Error de red al descargar ${packageId}:`, error);
           }
         }
 
-        // Mostrar resumen de descargas
         let resultMessage = `Se descargaron <strong>${downloadResults.success.length}</strong> paquetes exitosamente.`;
 
         if (downloadResults.failed.length > 0) {
@@ -590,13 +613,11 @@
           html: resultMessage,
           confirmButtonText: 'Continuar'
         }).then(() => {
-          // Recargar la página para mostrar los nuevos archivos
           location.reload();
         });
       }
 
-      // Limpiar intervalos cuando se cierre el modal
-      modalDescarga.addEventListener('hidden.bs.modal', () => {
+      modalDescarga._element.addEventListener('hidden.bs.modal', () => {
         if (verificationInterval) {
           clearInterval(verificationInterval);
           verificationInterval = null;
@@ -605,7 +626,70 @@
       });
     });
 
-    // El resto de tu script (XML a PDF, etc.) permanece igual...
+
+    //fin carga desdde cfdi
+
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+    // convertir xml a pdf
+    document.addEventListener('DOMContentLoaded', function() {
+      const viewFilesModal = document.getElementById('viewFilesModal');
+      if (viewFilesModal) {
+        viewFilesModal.addEventListener('show.bs.modal', function(event) {
+          // Elemento que activó el modal (la fila de la tabla)
+          const row = event.relatedTarget;
+
+          // Extraer información de los atributos data-*
+          const pdfPath = row.getAttribute('data-pdf-path');
+          const xmlPath = row.getAttribute('data-xml-path');
+          const uuid = row.getAttribute('data-uuid');
+
+          // Actualizar el título del modal
+          const modalTitle = viewFilesModal.querySelector('.modal-title');
+          modalTitle.textContent = 'Archivos de Factura: ' + uuid;
+
+          // Actualizar el visor de PDF
+          const pdfViewer = document.getElementById('pdf-viewer');
+          pdfViewer.src = pdfPath;
+
+          // Cargar y mostrar el contenido del XML
+          const xmlViewer = document.getElementById('xml-viewer');
+          xmlViewer.textContent = 'Cargando XML...';
+
+          fetch(xmlPath)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('No se pudo cargar el archivo XML. Código de estado: ' + response.status);
+              }
+              return response.text();
+            })
+            .then(data => {
+              // Escapar caracteres especiales de HTML para mostrar el XML como texto plano
+              const escapedXml = data.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              xmlViewer.innerHTML = `<code class="language-xml">${escapedXml}</code>`;
+            })
+            .catch(error => {
+              xmlViewer.textContent = 'Error al cargar el archivo XML. Verifique que la ruta sea correcta: ' + xmlPath;
+              console.error('Error en fetch:', error);
+            });
+
+          // Asegurarse de que la pestaña de PDF esté activa al abrir
+          const pdfTab = document.querySelector('#pdf-tab');
+          if (pdfTab) {
+            const tab = new bootstrap.Tab(pdfTab);
+            tab.show();
+          }
+        });
+
+        // Limpiar el iframe al cerrar el modal para detener la carga
+        viewFilesModal.addEventListener('hidden.bs.modal', function() {
+          const pdfViewer = document.getElementById('pdf-viewer');
+          pdfViewer.src = 'about:blank';
+        });
+      }
+    });
+    //fin de convertir xml a pdf
   </script>
 <?php endif; ?>
 

@@ -61,7 +61,6 @@
             <div class="modal fade" id="modalSAT" tabindex="-1" aria-labelledby="modalSATLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-
                         <!-- Encabezado -->
                         <div class="modal-header">
                             <h5 class="modal-title" id="modalSATLabel">Conectar con SAT</h5>
@@ -112,7 +111,8 @@
                     </div>
                 </div>
             </div>
-            <!-- Modal descarga CFDI - VERSIÓN MEJORADA -->
+
+            <!-- Modal descarga CFDI  -->
             <div class="modal fade" id="modalDescarga" tabindex="-1" aria-labelledby="modalDescargaLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <div class="modal-content">
@@ -142,6 +142,10 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
+                                    <label class="form-label">RFC</label>
+                                    <input type="text" class="form-control" name="rfc" required>
+                                </div>
+                                <div class="col-md-6">
                                     <label class="form-label">Fecha inicio</label>
                                     <input type="date" class="form-control" name="fecha_inicio" id="fecha_inicio" required
                                         max="<?= date('Y-m-d') ?>">
@@ -169,72 +173,6 @@
                     </div>
                 </div>
             </div>
-
-            <script>
-                // Validación mejorada de fechas
-                document.addEventListener('DOMContentLoaded', function() {
-                    const fechaInicio = document.getElementById('fecha_inicio');
-                    const fechaFin = document.getElementById('fecha_fin');
-                    const validationMsg = document.getElementById('fecha-validation');
-                    const fechaInfo = document.getElementById('dias-rango');
-                    const btnSolicitar = document.getElementById('btn-solicitar');
-
-                    function calculateDays() {
-                        if (fechaInicio.value && fechaFin.value) {
-                            const start = new Date(fechaInicio.value);
-                            const end = new Date(fechaFin.value);
-                            const diffTime = Math.abs(end - start);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-                            fechaInfo.textContent = `${diffDays} días seleccionados`;
-
-                            // Color según el rango
-                            if (diffDays > 31) {
-                                fechaInfo.className = 'text-danger';
-                                fechaInfo.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>${diffDays} días - Rango muy amplio (máx. 31 días)`;
-                            } else if (diffDays > 15) {
-                                fechaInfo.className = 'text-warning';
-                                fechaInfo.innerHTML = `<i class="fas fa-info-circle me-1"></i>${diffDays} días - Rango amplio`;
-                            } else {
-                                fechaInfo.className = 'text-success';
-                                fechaInfo.innerHTML = `<i class="fas fa-check-circle me-1"></i>${diffDays} días - Rango óptimo`;
-                            }
-
-                            return diffDays;
-                        }
-                        return 0;
-                    }
-
-                    function validateDates() {
-                        if (fechaInicio.value && fechaFin.value) {
-                            const diffDays = calculateDays();
-
-                            if (fechaInicio.value >= fechaFin.value) {
-                                validationMsg.style.display = 'block';
-                                btnSolicitar.disabled = true;
-                                return false;
-                            } else if (diffDays > 31) {
-                                validationMsg.style.display = 'none';
-                                btnSolicitar.disabled = true;
-                                return false;
-                            } else {
-                                validationMsg.style.display = 'none';
-                                btnSolicitar.disabled = false;
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-
-                    if (fechaInicio && fechaFin) {
-                        fechaInicio.addEventListener('change', validateDates);
-                        fechaFin.addEventListener('change', validateDates);
-
-                        // Calcular días inicialmente si hay valores
-                        setTimeout(calculateDays, 100);
-                    }
-                });
-            </script>
 
             <!-- Modal para subir archivo xml y leer información -->
 
@@ -278,53 +216,30 @@
             <div class="card-header mt-3">
                 <h3 class="card-title">Facturas Cargadas</h3>
             </div>
-            <?php
-            require_once __DIR__ . "../../config.php";
-            $result = $conn->query("SELECT * FROM facturas ORDER BY fecha DESC LIMIT 10");
-            echo '<div class="card-body">';
-            echo '<table class="table table-hover text-center align-middle">';
-            echo '<thead class="table-info">';
-            echo '<tr>';
-            echo '<th>UUID</th>';
-            echo '<th>Serie</th>';
-            echo '<th>Folio Fiscal</th>';
-            echo '<th>RFC Emisor</th>';
-            echo '<th>RFC Receptor</th>';
-            echo '<th>Razón Social</th>';
-            echo '<th>Fecha Emisión</th>';
-            echo '<th>Uso CFDI</th>';
-            echo '<th>Subtotal</th>';
-            echo '<th>Total</th>';
-            echo '<th>Forma de Pago</th>';
-            echo '<th>Metodo de Pago</th>';
-            echo '<th>Archivos</th>';
-            echo '</tr>';
-            echo '</thead>';
-            echo '<tbody id="facturas-cargadas">';
-            while ($row = $result->fetch_assoc()) {
-                $pdfPath = 'uploads/pdf/' . $row['pdf_file'];
-                $xmlPath = 'uploads/xml/' . $row['xml_file'];
-                echo '<tr>';
-                echo '<td>' . $row['uuid'] . '</td>';
-                echo '<td>' . $row['serie'] . '</td>';
-                echo '<td>' . $row['folio'] . '</td>';
-                echo '<td>' . $row['emisor_rfc'] . '</td>';
-                echo '<td>' . $row['receptor_rfc'] . '</td>';
-                echo '<td>' . $row['emisor_nombre'] . '</td>';
-                echo '<td>' . $row['fecha'] . '</td>';
-                echo '<td>' . $row['receptor_uso_cfdi'] . '</td>';
-                echo '<td>' . number_format($row['subtotal'], 2) . '</td>';
-                echo '<td>' . number_format($row['total'], 2) . '</td>';
-                echo '<td>' . $row['forma_pago'] . '</td>';
-                echo '<td>' . $row['metodo_pago'] . '</td>';
-                echo '<td>
-                <a href="' . $pdfPath . '" class="text-danger" download title="Descargar PDF"> <i class="fas fa-file-pdf fa-lg">pdf</i></a>
-                <a href="' . $xmlPath . '" class="text-primary ms-2" download title="Descargar XML"> <i class="fas fa-file-code fa-lg">xml</i></a>
-                </td>';
-                echo '</tr>';
-            }
-            echo '</tbody>';
-            echo '</table>';
-            echo '</div>';
-            ?>
-        </div>
+
+            <div class="card-body">
+                <table class="table table-hover text-center align-middle">
+                    <thead class="table-info">
+                        <tr>
+                            <th>UUID</th>
+                            <th>Serie</th>
+                            <th>Folio Fiscal</th>
+                            <th>RFC Emisor</th>
+                            <th>RFC Receptor</th>
+                            <th>Razón Social</th>
+                            <th>Fecha Emisión</th>
+                            <th>Uso CFDI</th>
+                            <th>Subtotal</th>
+                            <th>Total</th>
+                            <th>Forma de Pago</th>
+                            <th>Método de Pago</th>
+                            <th>Archivos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facturas-cargadas">
+                        <tr>
+                            <td colspan="13">Cargando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>

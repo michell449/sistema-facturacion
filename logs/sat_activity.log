@@ -348,3 +348,35 @@
 [2025-10-03 23:49:48] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
 [2025-10-03 23:50:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
 [2025-10-03 23:50:24] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:50:47] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:50:49] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:51:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:51:20] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:51:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:51:50] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:52:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:52:20] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:52:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:52:52] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:53:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:53:20] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:53:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:53:49] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:54:18] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:54:22] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:54:48] Verificando solicitud - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d"}
+[2025-10-03 23:54:50] Resultado de verificación - {"request_id":"2db7f5b2-3384-4a03-8c2f-774009455a8d","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:55:21] Iniciando solicitud al SAT - {"fecha_inicio":"2021-01-01","fecha_fin":"2021-01-03","tipo_descarga":"emitidas","dias_rango":2}
+[2025-10-03 23:55:23] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"7e3b9880-1a94-4ea0-8acd-fb7bcc97dd20"}
+[2025-10-03 23:55:23] Verificando solicitud - {"request_id":"7e3b9880-1a94-4ea0-8acd-fb7bcc97dd20"}
+[2025-10-03 23:55:27] Resultado de verificación - {"request_id":"7e3b9880-1a94-4ea0-8acd-fb7bcc97dd20","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-03 23:55:57] Verificando solicitud - {"request_id":"7e3b9880-1a94-4ea0-8acd-fb7bcc97dd20"}
+[2025-10-03 23:56:01] Resultado de verificación - {"request_id":"7e3b9880-1a94-4ea0-8acd-fb7bcc97dd20","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-06 17:10:48] Iniciando solicitud al SAT - {"fecha_inicio":"2025-10-01","fecha_fin":"2025-10-05","tipo_descarga":"emitidas","dias_rango":4}
+[2025-10-06 17:10:54] Respuesta de solicitud SAT - {"status_code":5000,"status_message":"Solicitud Aceptada","request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38"}
+[2025-10-06 17:10:54] Verificando solicitud - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38"}
+[2025-10-06 17:10:57] Resultado de verificación - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-06 17:11:28] Verificando solicitud - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38"}
+[2025-10-06 17:11:31] Resultado de verificación - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}
+[2025-10-06 17:11:57] Verificando solicitud - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38"}
+[2025-10-06 17:12:00] Resultado de verificación - {"request_id":"cc4a8616-a270-4903-a778-2d3bcc73bc38","status_code":5000,"status_message":"Solicitud Aceptada","is_finished":false,"package_count":0,"package_ids":[]}

@@ -17,7 +17,8 @@ $uploadTmpDir = __DIR__ . "/../uploads/tmp/";
 if (!is_dir($uploadTmpDir)) mkdir($uploadTmpDir, 0755, true);
 
 // helper para parsear un XML string y devolver array de datos o false
-function parseCfdiXmlString($xmlString) {
+function parseCfdiXmlString($xmlString)
+{
     libxml_use_internal_errors(true);
     $xml = simplexml_load_string($xmlString);
     if (!$xml) return false;
@@ -29,9 +30,9 @@ function parseCfdiXmlString($xmlString) {
     }
 
     // función auxiliar para buscar nodos por local-name
-    $getByLocal = function($node, $local) {
+    $getByLocal = function ($node, $local) {
         $res = $node->xpath("//*[local-name()='$local']");
-        return ($res && count($res)>0) ? $res[0] : null;
+        return ($res && count($res) > 0) ? $res[0] : null;
     };
 
     $comprobante = $getByLocal($xml, 'Comprobante') ?: $xml;
@@ -84,7 +85,7 @@ function parseCfdiXmlString($xmlString) {
 $results = ['success' => true, 'parsed' => [], 'errors' => []];
 
 // function to handle single uploaded xml tmp file
-$handleXmlTmp = function($tmpPath, $originalName) use (&$results, $uploadTmpDir) {
+$handleXmlTmp = function ($tmpPath, $originalName) use (&$results, $uploadTmpDir) {
     $contents = file_get_contents($tmpPath);
     $parsed = parseCfdiXmlString($contents);
     if (!$parsed) {
@@ -109,9 +110,9 @@ if (!empty($_FILES)) {
         // Soporta múltiples archivos por input (array)
         if (is_array($fileInfo['name'])) {
             $count = count($fileInfo['name']);
-            for ($i=0;$i<$count;$i++) {
+            for ($i = 0; $i < $count; $i++) {
                 if ($fileInfo['error'][$i] !== UPLOAD_ERR_OK) {
-                    $results['errors'][] = "Error subiendo archivo: ".$fileInfo['name'][$i];
+                    $results['errors'][] = "Error subiendo archivo: " . $fileInfo['name'][$i];
                     continue;
                 }
                 $tmp = $fileInfo['tmp_name'][$i];
@@ -125,7 +126,7 @@ if (!empty($_FILES)) {
                     // extraer zip y buscar xmls
                     $zip = new ZipArchive();
                     if ($zip->open($tmp) === true) {
-                        for ($j=0; $j < $zip->numFiles; $j++) {
+                        for ($j = 0; $j < $zip->numFiles; $j++) {
                             $entry = $zip->getNameIndex($j);
                             if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) !== 'xml') continue;
                             $stream = $zip->getStream($entry);
@@ -161,7 +162,7 @@ if (!empty($_FILES)) {
         } else {
             // caso simple (no array)
             if ($fileInfo['error'] !== UPLOAD_ERR_OK) {
-                $results['errors'][] = "Error subiendo archivo: ".$fileInfo['name'];
+                $results['errors'][] = "Error subiendo archivo: " . $fileInfo['name'];
                 continue;
             }
             $tmp = $fileInfo['tmp_name'];
@@ -172,7 +173,7 @@ if (!empty($_FILES)) {
             } elseif ($ext === 'zip') {
                 $zip = new ZipArchive();
                 if ($zip->open($tmp) === true) {
-                    for ($j=0; $j < $zip->numFiles; $j++) {
+                    for ($j = 0; $j < $zip->numFiles; $j++) {
                         $entry = $zip->getNameIndex($j);
                         if (strtolower(pathinfo($entry, PATHINFO_EXTENSION)) !== 'xml') continue;
                         $stream = $zip->getStream($entry);
@@ -211,14 +212,4 @@ if (!empty($_FILES)) {
     exit;
 }
 
-ob_end_clean(); // limpiar posibles warnings/HTML
-try {
-    echo json_encode($results, JSON_UNESCAPED_UNICODE);
-} catch (Throwable $e) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Error generando respuesta JSON",
-        "error"   => $e->getMessage()
-    ]);
-}
 exit;
