@@ -1,19 +1,46 @@
 <?php
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php'; // $conn
-
+// app-m/core/lista-facturas-cargadas.php
+require_once __DIR__ . "/../config.php";
 header('Content-Type: application/json; charset=utf-8');
+$sql = "SELECT * FROM facturas ORDER BY fecha DESC";
+$result = $conn->query($sql);
+// Manejador de errores controlado (para no romper JSON)
+mysqli_report(MYSQLI_REPORT_OFF);
 
-$result = $conn->query("SELECT * FROM facturas ORDER BY fecha DESC LIMIT 50");
+try {
+    // Si se llama con POST, se está intentando guardar facturas
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        require_once __DIR__ . '/guardar-facturas.php';
+        exit;
+    }
 
-$facturas = [];
+    // Consulta todas las facturas registradas
+    $sql = "SELECT uuid, serie, folio, emisor_rfc, receptor_rfc, emisor_nombre, fecha, receptor_uso_cfdi, subtotal, total, forma_pago, metodo_pago, pdf_file, xml_file
+            FROM facturas
+            ORDER BY fecha DESC";
 
-while ($row = $result->fetch_assoc()) {
-    $row['subtotal'] = number_format($row['subtotal'], 2);
-    $row['total'] = number_format($row['total'], 2);
-    $row['pdf_url'] = 'uploads/pdf/' . $row['pdf_file'];
-    $row['xml_url'] = 'uploads/xml/' . $row['xml_file'];
-    $facturas[] = $row;
+    $result = $conn->query($sql);
+
+    if (!$result) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error en la consulta: ' . $conn->error
+        ]);
+        exit;
+    }
+
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
+
+    echo json_encode([
+        'success' => true,
+        'data' => $data
+    ], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Excepción capturada: ' . $e->getMessage()
+    ]);
 }
-
-echo json_encode(['success' => true, 'data' => $facturas], JSON_UNESCAPED_UNICODE);

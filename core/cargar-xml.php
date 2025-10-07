@@ -2,9 +2,6 @@
 // app-m/core/cargar-xml.php
 header('Content-Type: application/json; charset=utf-8');
 
-// Capturar cualquier salida no deseada
-ob_start();
-
 require_once __DIR__ . "/../config.php";
 header('Content-Type: application/json; charset=utf-8');
 

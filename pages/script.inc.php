@@ -40,7 +40,6 @@
 <!-- Agrega en tu cargar-facturas.inc.php: un div donde se mostrará la tabla en el modal -->
 <!-- Dentro del modal #cfdiModal coloca este tbody -->
 
-
 <?php if (basename($_SERVER['REQUEST_URI'], '.php') === 'cargar-facturas' || (isset($_GET['pg']) && $_GET['pg'] === 'cargar-facturas')): ?>
   <script>
     //Cargar xml manual
@@ -167,6 +166,7 @@
           }
         }
       }
+      console.log("Archivos seleccionados:", xmlInput.files, zipInput.files);
 
       try {
         const res = await fetch('core/lista-facturas-cargadas.php', {
@@ -205,21 +205,21 @@
     if (modalFooter) modalFooter.appendChild(btnConfirm);
 
     async function cargarFacturas() {
-  const tbody = document.getElementById('facturas-cargadas');
-  if (!tbody) return;
+      const tbody = document.getElementById('facturas-cargadas');
+      if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="13">Cargando...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13">Cargando...</td></tr>';
 
-  try {
-    const res = await fetch('core/lista-facturas-cargadas.php');
-    const data = await res.json();
+      try {
+        const res = await fetch('core/lista-facturas-cargadas.php');
+        const data = await res.json();
 
-    tbody.innerHTML = ''; // limpiar
+        tbody.innerHTML = ''; // limpiar
 
-    if (data.success && data.data.length > 0) {
-      data.data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+        if (data.success && data.data.length > 0) {
+          data.data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
           <td>${row.uuid}</td>
           <td>${row.serie}</td>
           <td>${row.folio}</td>
@@ -241,19 +241,19 @@
             </a>
           </td>
         `;
-        tbody.appendChild(tr);
-      });
-    } else {
-      tbody.innerHTML = '<tr><td colspan="13">No se encontraron facturas</td></tr>';
+            tbody.appendChild(tr);
+          });
+        } else {
+          tbody.innerHTML = '<tr><td colspan="13">No se encontraron facturas</td></tr>';
+        }
+      } catch (err) {
+        console.error('Error cargando facturas:', err);
+        tbody.innerHTML = '<tr><td colspan="13">Error al cargar las facturas</td></tr>';
+      }
     }
-  } catch (err) {
-    console.error('Error cargando facturas:', err);
-    tbody.innerHTML = '<tr><td colspan="13">Error al cargar las facturas</td></tr>';
-  }
-}
 
-// Llamar al cargar la página
-document.addEventListener('DOMContentLoaded', cargarFacturas);
+    // Llamar al cargar la página
+    document.addEventListener('DOMContentLoaded', cargarFacturas);
     //fin para carga manual de xml
 
     //-----------------------------------------------------------------------------------------------------------------------------------------------------------------
