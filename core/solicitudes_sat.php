@@ -19,13 +19,13 @@ $fiel = Fiel::create(
 );
 
 $service = create_sat_service($fiel);
-$res = $conn->query("SELECT * FROM sat_solicitudes WHERE estado='pendiente'");
+$res = $conn->query("SELECT * FROM cf_solicitudes WHERE estado='pendiente'");
 
 while ($row = $res->fetch_assoc()) {
     $verify = $service->verify($row['request_id']);
     if ($verify->getStatus()->isAccepted() && count($verify->getPackagesIds()) > 0) {
         foreach ($verify->getPackagesIds() as $pid) {
-            $conn->query("INSERT INTO sat_paquetes (request_id, package_id, estado) VALUES ('{$row['request_id']}', '$pid', 'listo')");
+            $conn->query("INSERT INTO cf_solicitudes (id_solicitud, package_id, estado) VALUES ('{$row['request_id']}', '$pid', 'listo')");
         }
         $conn->query("UPDATE sat_solicitudes SET estado='completado' WHERE request_id='{$row['request_id']}'");
     }

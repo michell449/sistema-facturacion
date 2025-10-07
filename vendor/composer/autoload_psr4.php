@@ -6,10 +6,12 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'setasign\\Fpdi\\' => array($vendorDir . '/setasign/fpdi/src'),
     'XmlResourceRetriever\\' => array($vendorDir . '/eclipxe/xmlresourceretriever/src/XmlResourceRetriever'),
     'Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'Symfony\\Component\\Process\\' => array($vendorDir . '/symfony/process'),
     'Spipu\\Html2Pdf\\' => array($vendorDir . '/spipu/html2pdf/src'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/src'),
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-factory/src', $vendorDir . '/psr/http-message/src'),
     'Psr\\Http\\Client\\' => array($vendorDir . '/psr/http-client/src'),
     'PhpCfdi\\SatWsDescargaMasiva\\' => array($vendorDir . '/phpcfdi/sat-ws-descarga-masiva/src'),
@@ -17,6 +19,9 @@ return array(
     'PhpCfdi\\Credentials\\' => array($vendorDir . '/phpcfdi/credentials/src'),
     'PhpCfdi\\CfdiToPdf\\' => array($vendorDir . '/phpcfdi/cfditopdf/src'),
     'PhpCfdi\\CfdiCleaner\\' => array($vendorDir . '/phpcfdi/cfdi-cleaner/src'),
+    'Mpdf\\PsrLogAwareTrait\\' => array($vendorDir . '/mpdf/psr-log-aware-trait/src'),
+    'Mpdf\\PsrHttpMessageShim\\' => array($vendorDir . '/mpdf/psr-http-message-shim/src'),
+    'Mpdf\\' => array($vendorDir . '/mpdf/mpdf/src'),
     'League\\Plates\\' => array($vendorDir . '/league/plates/src'),
     'GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
@@ -24,5 +29,6 @@ return array(
     'Eclipxe\\XmlSchemaValidator\\' => array($vendorDir . '/eclipxe/xmlschemavalidator/src'),
     'Eclipxe\\MicroCatalog\\' => array($vendorDir . '/eclipxe/micro-catalog/src'),
     'Eclipxe\\Enum\\' => array($vendorDir . '/eclipxe/enum/src'),
+    'DeepCopy\\' => array($vendorDir . '/myclabs/deep-copy/src/DeepCopy'),
     'CfdiUtils\\' => array($vendorDir . '/eclipxe/cfdiutils/src/CfdiUtils'),
 );

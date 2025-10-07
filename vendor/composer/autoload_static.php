@@ -9,11 +9,17 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
     public static $files = array (
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
+        'db356362850385d08a5381de2638b5fd' => __DIR__ . '/..' . '/mpdf/mpdf/src/functions.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        's' => 
+        array (
+            'setasign\\Fpdi\\' => 14,
+        ),
         'X' => 
         array (
             'XmlResourceRetriever\\' => 21,
@@ -26,6 +32,7 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
         ),
         'P' => 
         array (
+            'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
             'PhpCfdi\\SatWsDescargaMasiva\\' => 28,
@@ -33,6 +40,12 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
             'PhpCfdi\\Credentials\\' => 20,
             'PhpCfdi\\CfdiToPdf\\' => 18,
             'PhpCfdi\\CfdiCleaner\\' => 20,
+        ),
+        'M' => 
+        array (
+            'Mpdf\\PsrLogAwareTrait\\' => 22,
+            'Mpdf\\PsrHttpMessageShim\\' => 24,
+            'Mpdf\\' => 5,
         ),
         'L' => 
         array (
@@ -50,6 +63,10 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
             'Eclipxe\\MicroCatalog\\' => 21,
             'Eclipxe\\Enum\\' => 13,
         ),
+        'D' => 
+        array (
+            'DeepCopy\\' => 9,
+        ),
         'C' => 
         array (
             'CfdiUtils\\' => 10,
@@ -57,6 +74,10 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
     );
 
     public static $prefixDirsPsr4 = array (
+        'setasign\\Fpdi\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/setasign/fpdi/src',
+        ),
         'XmlResourceRetriever\\' => 
         array (
             0 => __DIR__ . '/..' . '/eclipxe/xmlresourceretriever/src/XmlResourceRetriever',
@@ -72,6 +93,10 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
         'Spipu\\Html2Pdf\\' => 
         array (
             0 => __DIR__ . '/..' . '/spipu/html2pdf/src',
+        ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/src',
         ),
         'Psr\\Http\\Message\\' => 
         array (
@@ -102,6 +127,18 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
         array (
             0 => __DIR__ . '/..' . '/phpcfdi/cfdi-cleaner/src',
         ),
+        'Mpdf\\PsrLogAwareTrait\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mpdf/psr-log-aware-trait/src',
+        ),
+        'Mpdf\\PsrHttpMessageShim\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mpdf/psr-http-message-shim/src',
+        ),
+        'Mpdf\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mpdf/mpdf/src',
+        ),
         'League\\Plates\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/plates/src',
@@ -129,6 +166,10 @@ class ComposerStaticInitd0906458556ad0058e128f52d33ab49d
         'Eclipxe\\Enum\\' => 
         array (
             0 => __DIR__ . '/..' . '/eclipxe/enum/src',
+        ),
+        'DeepCopy\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
         ),
         'CfdiUtils\\' => 
         array (
