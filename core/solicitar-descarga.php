@@ -93,29 +93,28 @@ $docStatus = match ($estatus) {
     'cancelados' => DocumentStatus::cancelled(),
     'todos' => DocumentStatus::undefined(),
     default => DocumentStatus::active(),
-
 };
 $parameters = $parameters->withDocumentStatus($docStatus);
 
-    // Rango fechas necesario
-    $fi = $input['fecha_inicio'] ?? '';
-    $ff = $input['fecha_fin'] ?? '';
-    if (!$fi || !$ff) respond(['success' => false, 'message' => 'Fechas requeridas'], 400);
-    if ($fi > $ff) respond(['success' => false, 'message' => 'fecha_inicio > fecha_fin'], 400);
-    $fiDT = new DateTimeImmutable($fi . ' 00:00:00');
-    $ffDT = new DateTimeImmutable($ff . ' 23:59:59');
-    $dias = $ffDT->diff($fiDT)->days;
-    if ($dias > 31) respond(['success' => false, 'message' => 'Rango > 31 días'], 400);
-    $period = DateTimePeriod::createFromValues($fiDT->format('Y-m-d H:i:s'), $ffDT->format('Y-m-d H:i:s'));
-    $downloadType = ($tipo === 'recibidas') ? DownloadType::received() : DownloadType::issued();
-    $reqType = ($formato === 'metadata') ? RequestType::metadata() : RequestType::xml();
-    $parameters = $parameters->withPeriod($period)->withDownloadType($downloadType)->withRequestType($reqType);
-    // RFC handling
-    if ($tipo === 'emitidas') {
-        $parameters = $parameters->withRfcOnBehalf(RfcOnBehalf::create($rfc));
-    } else { // recibidas
-        $parameters = $parameters->withRfcMatch(RfcMatch::create($rfc));
-    }
+// Rango fechas necesario
+$fi = $input['fecha_inicio'] ?? '';
+$ff = $input['fecha_fin'] ?? '';
+if (!$fi || !$ff) respond(['success' => false, 'message' => 'Fechas requeridas'], 400);
+if ($fi > $ff) respond(['success' => false, 'message' => 'fecha_inicio > fecha_fin'], 400);
+$fiDT = new DateTimeImmutable($fi . ' 00:00:00');
+$ffDT = new DateTimeImmutable($ff . ' 23:59:59');
+$dias = $ffDT->diff($fiDT)->days;
+if ($dias > 31) respond(['success' => false, 'message' => 'Rango > 31 días'], 400);
+$period = DateTimePeriod::createFromValues($fiDT->format('Y-m-d H:i:s'), $ffDT->format('Y-m-d H:i:s'));
+$downloadType = ($tipo === 'recibidas') ? DownloadType::received() : DownloadType::issued();
+$reqType = ($formato === 'metadata') ? RequestType::metadata() : RequestType::xml();
+$parameters = $parameters->withPeriod($period)->withDownloadType($downloadType)->withRequestType($reqType);
+// RFC handling
+if ($tipo === 'emitidas') {
+    $parameters = $parameters->withRfcOnBehalf(RfcOnBehalf::create($rfc));
+} else { // recibidas
+    $parameters = $parameters->withRfcMatch(RfcMatch::create($rfc));
+}
 
 $service = serviceFromFiel($fiel);
 $result = $service->query($parameters);
@@ -167,4 +166,18 @@ respond([
     'status_message' => $status->getMessage(),
     'uuid' => $uuid ?: null,
     'dias_rango' => isset($dias) ? $dias : null,
+]);
+// guardar-solicitud.php
+$response = $service->solicitarDescarga($params);
+$requestId = $response->getRequestId();
+
+$stmt = $db->prepare("INSERT INTO cf_solicitudes 
+    (solicitud_id_sat, tipo, rfc, fecha_ini, fecha_fin, estado, ultima_verificacion, created_at) 
+    VALUES (?, ?, ?, ?, ?, 'pendiente', NOW(), NOW())");
+$stmt->execute([$requestId, $tipo, $rfc, $fechaIni, $fechaFin]);
+
+respond([
+    'success' => true,
+    'message' => 'Solicitud registrada correctamente. El SAT procesará la solicitud y puede tardar hasta 24 horas.',
+    'requestId' => $requestId,
 ]);
