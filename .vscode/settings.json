@@ -1,0 +1,13 @@
+{
+    "workbench.editor.enablePreview": true,
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
+    "workbench.editor.enablePreviewFromQuickOpen": true,
+    "workbench.editor.showTabIndex": true,
+    "task.quickOpen.showAll": true,
+    "editor.aiStats.enabled": true,
+    "workbench.editor.closeOnFileDelete": false,
+    "workbench.editor.scrollToSwitchTabs": false,
+    "window.autoDetectColorScheme": false,
+    "window.density.editorTabHeight": "compact",
+    "accessibility.signalOptions.debouncePositionChanges": true
+}

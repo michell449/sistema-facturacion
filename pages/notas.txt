@@ -185,3 +185,16 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
 use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
 use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;
+
+
+const formData = new FormData(formDescarga);
+const data = Object.fromEntries(formData.entries());
+data.tipo = data.tipo_descarga; // <- se debe asignar
+
+fetch('core/solicitar-descarga.php', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data)
+});
+
+console.log(data);

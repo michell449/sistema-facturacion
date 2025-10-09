@@ -1,5 +1,5 @@
 <?php
-//app-m
+//app-m\core\listar-solicitudes.php
 require_once __DIR__ . '/class/db.php';
 
 function ls_html_escape(string $v): string
@@ -16,6 +16,11 @@ try {
     }
     $has = fn(string $c) => in_array($c, $cols, true);
     $rfcCol = $has('rfc') ? 'rfc' : ($has('rfc_emisor') ? 'rfc_emisor' : ($has('rfc_receptor') ? 'rfc_receptor' : 'NULL'));
+    // Traer todas las columnas de RFC
+    $sqlRFC = '';
+    if ($has('rfc')) $sqlRFC .= 'rfc,';
+    if ($has('rfc_emisor')) $sqlRFC .= 'rfc_emisor,';
+    if ($has('rfc_receptor')) $sqlRFC .= 'rfc_receptor,';
     $createdCol = $has('created_at') ? 'created_at' : ($has('fecha_creacion') ? 'fecha_creacion' : 'fecha_ini');
 
     $fRfc    = isset($_GET['rfc'])    ? trim($_GET['rfc'])    : '';
@@ -48,7 +53,7 @@ try {
         $params[] = "%$fTexto%";
     }
 
-    $sql = "SELECT id_solicitud, solicitud_id_sat, $rfcCol AS rfc, tipo, fecha_ini, fecha_fin, estado, paquetes_json, total_paquetes, ultima_verificacion, $createdCol AS created_at FROM cf_solicitudes";
+    $sql = "SELECT id_solicitud, solicitud_id_sat, " . $sqlRFC . "tipo, fecha_ini, fecha_fin, estado, paquetes_json, total_paquetes, ultima_verificacion, $createdCol AS created_at FROM cf_solicitudes";
     if ($where) {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
@@ -78,7 +83,8 @@ try {
             'emitidas' => ['primary', 'Emitidas'],
             'recibidas' => ['success', 'Recibidas'],
         ];
-        [$tCls, $tTxt] = $tipoMap[$r['tipo']] ?? ['secondary', ucfirst($r['tipo'])];
+        $tipoValor = $r['tipo'] ?? 'desconocido';
+        [$tCls, $tTxt] = $tipoMap[$tipoValor] ?? ['secondary', ucfirst($tipoValor)];
         $estados = [
             'pendiente' => ['secondary', '<i class="fas fa-clock me-1"></i>Esperando verificación'],
             'aceptada'  => ['info', '<i class="fas fa-hourglass-half me-1"></i>Aceptada'],
@@ -92,7 +98,16 @@ try {
         echo '<tr data-id="' . (int)$r['id_solicitud'] . '">';
         echo '<td>' . (int)$r['id_solicitud'] . '</td>';
         echo '<td class="text-break" style="max-width:180px"><small>' . ls_html_escape($r['solicitud_id_sat']) . '</small></td>';
-        echo '<td>' . ls_html_escape($r['rfc']) . '</td>';
+        // Mostrar RFC correcto según tipo
+        $rfcMostrar = '';
+        if (($r['tipo'] ?? '') === 'recibidas') {
+            $rfcMostrar = $r['rfc_receptor'] ?? '';
+        } elseif (($r['tipo'] ?? '') === 'emitidas' || ($r['tipo'] ?? '') === 'emitidos') {
+            $rfcMostrar = $r['rfc_emisor'] ?? '';
+        } else {
+            $rfcMostrar = $r['rfc'] ?? ($r['rfc_emisor'] ?? $r['rfc_receptor'] ?? '');
+        }
+        echo '<td>' . ls_html_escape($rfcMostrar) . '</td>';
         echo '<td><span class="badge bg-' . $tCls . '">' . $tTxt . '</span></td>';
         echo '<td><small>' . $rango . '</small></td>';
         echo '<td><span class="badge bg-secondary fw-normal" style="font-size:.75rem;">' . $paquetesDesc . '/' . ($total) . '</span></td>';

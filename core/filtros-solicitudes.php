@@ -19,7 +19,6 @@ echo '    <select name="tipo" class="form-select form-select-sm">';
 echo '      <option value="">Todos</option>';
 echo '      <option value="emitidas" '.($fTipo==='emitidas'?'selected':'').'>Emitidas</option>';
 echo '      <option value="recibidas" '.($fTipo==='recibidas'?'selected':'').'>Recibidas</option>';
-echo '      <option value="folio" '.($fTipo==='folio'?'selected':'').'>Folio</option>';
 echo '    </select>';
 echo '  </div>';
 // Estado
