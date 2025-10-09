@@ -47,3 +47,5 @@ foreach ($estados as $k => $data) {
 }
 echo ' </tbody>';
 echo '</table>';
+
+
