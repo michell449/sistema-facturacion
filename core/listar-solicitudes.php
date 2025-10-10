@@ -114,11 +114,18 @@ try {
         echo '<td class="estado-col"><span class="badge bg-' . $eCls . '">' . $eTxt . '</span></td>';
         echo '<td><small>' . ls_html_escape($r['created_at'] ?? '') . '</small></td>';
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
-        echo '<td><button class="btn btn-outline-primary btn-sm btn-verificar" title="Verificar"><i class="fas fa-sync"></i></button>';
+
+        // --- INICIO DE CAMBIOS ---
+        // Se crea una nueva celda <td> para las acciones
+        echo '<td>';
+        // Se agrega la clase "btn-verificar-individual" al botón de verificación
+        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
         if ($paquetesDesc < $total && $total > 0) {
-            echo ' <button class="btn btn-outline-success btn-sm btn-descargar-pend" title="Descargar pendientes"><i class="fas fa-download"></i></button>';
+            echo ' <button class="btn btn-outline-success btn-sm btn-descargar-pend" title="Descargar paquetes pendientes"><i class="fas fa-download"></i></button>';
         }
         echo '</td>';
+        // --- FIN DE CAMBIOS ---
+
         echo '</tr>';
     }
 } catch (Throwable $e) {
