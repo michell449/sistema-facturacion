@@ -179,19 +179,21 @@
 
             <!-- Modal para subir archivo xml y leer información -->
 
-            <div class="modal fade r" id="cfdiModal" tabindex="-1" aria-labelledby="modalCfdi" aria-hidden="true">
+            <!-- Modal para revisar y registrar facturas cargadas -->
+            <div class="modal fade" id="cfdiModal" tabindex="-1" aria-labelledby="modalCfdiLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalDescargaLabel">Ver datos de CFDI</h5>
+                            <h5 class="modal-title" id="modalCfdiLabel">Revisión de facturas cargadas</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body">
-                            <table class="table table-bordered ">
-                                <tbody id="cfdiReviewBody">
-                                    <thead>
+                            <div class="alert alert-warning mb-2" id="cfdiParseErrors" style="display:none"></div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover mb-2" style="width:100%;">
+                                    <thead class="thead-dark text-center">
                                         <tr>
-                                            <th>Seleccionar</th>
+                                            <th></th>
                                             <th>#</th>
                                             <th>UUID</th>
                                             <th>Fecha</th>
@@ -200,30 +202,57 @@
                                             <th>Subtotal</th>
                                             <th>Total</th>
                                             <th>Serie</th>
-                                            <th>Folio Fiscal</th>
-                                            <th>Estado UUID</th>
+                                            <th>Folio</th>
+                                            <th>Validación</th>
                                         </tr>
                                     </thead>
-                                </tbody>
-                            </table>
-                            <div id="cfdiParseErrors" class="text-danger"></div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <tbody id="cfdiReviewBody" class="text-center"></tbody>
+                                </table>
                             </div>
+                        </div>
+                        <div class="modal-footer">
+                            <!-- El botón de registrar facturas se agrega por JS -->
                         </div>
                     </div>
                 </div>
             </div>
 
+
             <!-- Facturas cargadas -->
             <div class="card-header mt-3">
                 <h3 class="card-title">Facturas Cargadas</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-info text-center align-middle">
+                        <tr>
+                            <th>UUID</th>
+                            <th>Serie</th>
+                            <th>Folio Fiscal</th>
+                            <th>Fecha Emisión</th>
+                            <th>RFC Emisor</th>
+                            <th>Razón Social Emisor</th>
+                            <th>RFC Receptor</th>
+                            <th>Razón Social Receptor</th>
+                            <th>Uso CFDI</th>
+                            <th>Subtotal</th>
+                            <th>Total</th>
+                            <th>Forma de Pago</th>
+                            <th>Método de Pago</th>
+                            <th>Archivos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facturas-cargadas" class="text-center align-middle">
+                        <?php include __DIR__ . '/../core/listar-facturas.php'; ?>
+                    </tbody>
+                </table>
 
             </div>
+
         </div>
-        <?php include __DIR__ . '/../core/listar-facturas.php'; ?>
     </div>
 </div>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -338,7 +367,7 @@
                     body: JSON.stringify(data)
                 });
                 console.log(data);
-                
+
                 const result = await response.json();
 
                 if (!result.success) throw new Error(result.message);

@@ -208,5 +208,6 @@ if (!empty($_FILES)) {
     echo json_encode(["success" => false, "message" => "No se recibió ningún archivo"]);
     exit;
 }
-
+// devolver resultados al front-end
+echo json_encode($results, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 exit;
