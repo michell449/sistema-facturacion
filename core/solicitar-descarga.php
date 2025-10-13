@@ -18,7 +18,6 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
-use PhpCfdi\SatWsDescargaMasiva\Shared\RfcMatch;
 use GuzzleHttp\Client;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 
@@ -103,23 +102,21 @@ try {
 
 $tipoSolicitud = 'cfdi';
 
-// --- INICIO DE CORRECCIÓN ---
 // 3. Limpiar y validar rigurosamente el tipo de descarga.
-// Se usa trim() y strtolower() para asegurar que el valor sea consistente.
 $tipoDescarga = isset($input['tipo_descarga']) ? strtolower(trim($input['tipo_descarga'])) : '';
-// --- FIN DE CORRECCIÓN ---
 
 $rfcSolicitante = $input['rfc'];
 $rfcEmisor = '';
 $rfcReceptor = '';
 $rfcAutenticacion = $rfcSolicitante; 
 
-if ($tipoDescarga === 'emitidos') {
+if ($tipoDescarga === 'emitidos' || $tipoDescarga === 'emitidas') {
     $rfcEmisor = $rfcSolicitante;
-} elseif ($tipoDescarga === 'recibidas') {
+    $tipoDescarga = 'emitidos'; // Se normaliza a 'emitidos'
+} elseif ($tipoDescarga === 'recibidos' || $tipoDescarga === 'recibidas') {
     $rfcReceptor = $rfcSolicitante;
+    $tipoDescarga = 'recibidos'; // Se normaliza a 'recibidos'
 } else {
-    // Si el valor sigue sin ser válido, se devuelve el valor exacto que se recibió.
     $receivedValue = $input['tipo_descarga'] ?? '[NO SE RECIBIÓ VALOR]';
     respond(['success' => false, 'message' => "El tipo de descarga no es válido. Se recibió el valor: '" . $receivedValue . "'"], 400);
 }
@@ -137,7 +134,9 @@ try {
     $end = DateTime::create($input['fecha_fin'] . ' 23:59:59');
     $period = new DateTimePeriod($start, $end);
 
-    $downloadType = ($tipoDescarga === 'recibidos') ? DownloadType::recibidos() : DownloadType::emitidos();
+    $downloadType = ($tipoDescarga === 'recibidos') ? DownloadType::received() : DownloadType::issued();
+   
+    
     $requestType = RequestType::cfdi();
 
     $queryParams = \PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters::create(
