@@ -130,10 +130,10 @@ try {
         echo '<td class="estado-col"><span class="badge bg-' . $eCls . '">' . $eTxt . '</span></td>';
         echo '<td><small>' . ls_html_escape($r['created_at'] ?? '') . '</small></td>';
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
-
-        // Acciones
         echo '<td>';
-        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i>     </a>';
+        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i  class="fas fa-sync-alt"></i></a>';
+        echo '</td>';
+        echo '<td>';
         echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" title="Descargar paquetes"><i class="fas fa-download"></i></button>';
         foreach ($paqs as $p) {
             if (!empty($p['zip_path']) && file_exists(__DIR__ . '/../' . ltrim($p['zip_path'], '/\\'))) {
@@ -141,8 +141,6 @@ try {
                 echo ' <a href="' . $url . '" class="btn btn-link btn-sm" target="_blank" title="Descargar ZIP"><i class="fas fa-file-archive"></i></a>';
             }
         }
-
-
         echo '</td>';
         echo '</tr>';
     }

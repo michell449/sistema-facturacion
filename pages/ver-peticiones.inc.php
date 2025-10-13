@@ -21,7 +21,8 @@
                             <th style="width:10%;">Estado</th>
                             <th style="width:11%;">Creada</th>
                             <th style="width:12%;">Últ. Verif.</th>
-                            <th style="width:10%;">Acciones</th>
+                            <th style="width:5%;">Verificar</th>
+                            <th style="width:5%;">Descargar</th>
                         </tr>
                     </thead>
                     <tbody class="text-center" id="tbody-solicitudes">
@@ -209,50 +210,101 @@
                 });
             }
         });
+        // ---- MANEJO DEL BOTÓN DE DESCARGA DE PAQUETES ----
+        const btnDescargar = e.target.closest('.btn-descargar-paquetes');
+        if (btnDescargar) {
+            (async function() {
+                const fila = btnDescargar.closest('tr');
+                const idSolicitud = fila.getAttribute('data-id');
+
+                btnDescargar.disabled = true;
+                const orig = btnDescargar.innerHTML;
+                btnDescargar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+
+                try {
+                    // Puedes elegir uno de los métodos según tu lógica, aquí se usa el primero (con descargar_paquetes flag)
+                    const resp = await fetch('core/actualizar-estado-solicitud.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id_solicitud: parseInt(idSolicitud, 10),
+                            descargar_paquetes: true
+                        }) // Añadimos un flag para forzar la descarga
+                    });
+                    const data = await resp.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Descarga completada',
+                            text: data.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', data.message || 'No se pudo descargar paquetes', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión al servidor', 'error');
+                } finally {
+                    btnDescargar.disabled = false;
+                    btnDescargar.innerHTML = orig;
+                }
+            })();
+        }
 
         document.addEventListener('click', async function(e) {
-    const btn = e.target.closest('.btn-descargar-paquetes');
-    if (!btn) return;
+            // ---- PROCESAR PAQUETES ----
+            const btnProcesar = e.target.closest('.btn-procesar-paquetes');
+            if (btnProcesar) {
+                const idSolicitud = btnProcesar.getAttribute('data-id');
+                btnProcesar.disabled = true;
+                const origHtml = btnProcesar.innerHTML;
+                btnProcesar.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-    const fila = btn.closest('tr');
-    const idSolicitud = fila.getAttribute('data-id');
+                Swal.fire({
+                    title: 'Procesando Facturas',
+                    text: 'Extrayendo, guardando y generando PDFs. Esto puede tardar unos momentos...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
 
-    btn.disabled = true;
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+                try {
+                    const response = await fetch('core/procesar-paquetes.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id_solicitud: idSolicitud
+                        })
+                    });
+                    const result = await response.json();
 
-    try {
-        const resp = await fetch('core/actualizar-estado-solicitud.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_solicitud: parseInt(idSolicitud, 10) })
+                    if (result.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Proceso Exitoso!',
+                            text: result.message,
+                        }).then(() => {
+                            window.location.href = 'panel?pg=cargar-facturas';
+                        });
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    Swal.fire('Error', error.message, 'error');
+                } finally {
+                    btnProcesar.disabled = false;
+                    btnProcesar.innerHTML = origHtml;
+                }
+            }
         });
-        const data = await resp.json();
-        console.log('Respuesta descarga paquetess:', data);
 
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Proceso completado',
-                text: data.message,
-                timer: 2000,
-                showConfirmButton: false
-            });
-            // Recargar la página para que se muestren los links ZIP
-            location.reload();
-        } else {
-            Swal.fire('Error', data.message || 'No se pudo descargar paquetes', 'error');
-        }
-    } catch (err) {
-        console.error(err);
-        Swal.fire('Error', 'Error de conexión al servidor', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = orig;
-    }
-});
-
-
-        console.log('✅ Sistema de verificación v2.0 inicializado correctamente.');
     });
+
+    console.log('✅ Sistema de verificación y procesamiento v2.2 inicializado correctamente.');
+
 </script>
