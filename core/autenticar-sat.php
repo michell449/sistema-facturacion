@@ -6,7 +6,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../config.php'; // Ya inicia la sesión con session_start()
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
@@ -58,17 +58,27 @@ try {
         throw new \Exception('El certificado de la e.firma no es válido o ha expirado.');
     }
 
-    // Guardar FIEL en sesión
-    $_SESSION['fiel_cer_content'] = $cerContent;
-    $_SESSION['fiel_key_content'] = $keyContent;
-    $_SESSION['fiel_passphrase'] = $password;
+    $rfc = $fiel->getRfc();
 
-    log_sat_activity("FIEL autenticada correctamente", ['rfc' => $fiel->getRfc()]);
+    // --- INICIO DE CAMBIOS ---
+    // Guardar la FIEL en la sesión, organizada por RFC
+    if (!isset($_SESSION['fiel_data'])) {
+        $_SESSION['fiel_data'] = [];
+    }
+    
+    $_SESSION['fiel_data'][$rfc] = [
+        'cer_content' => $cerContent,
+        'key_content' => $keyContent,
+        'passphrase'  => $password,
+    ];
+    // --- FIN DE CAMBIOS ---
+
+    log_sat_activity("FIEL autenticada y guardada en sesión", ['rfc' => $rfc]);
 
     json_response([
         'success' => true,
-        'message' => 'Autenticación exitosa.',
-        'rfc' => $fiel->getRfc()
+        'message' => 'Autenticación exitosa y FIEL almacenada temporalmente.',
+        'rfc' => $rfc
     ]);
 
 } catch (\Throwable $e) {

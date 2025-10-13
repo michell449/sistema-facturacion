@@ -14,7 +14,7 @@ if (file_exists($autoloadPrimary)) {
     exit;
 }
 
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../config.php'; // Ya inicia la sesión con session_start()
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
@@ -39,28 +39,36 @@ function createService(Fiel $fiel): Service
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
-// ¡IMPORTANTE! Asegúrate de que esta función esté correctamente implementada para cargar la FIEL
+// --- INICIO DE CAMBIOS ---
+// ¡IMPORTANTE! Esta función ahora carga la FIEL desde la sesión del usuario.
 function getFielFromSource(string $rfc): ?Fiel
 {
-    // ... Tu lógica para obtener la FIEL de forma segura (desde archivos, base de datos, etc.)
-    // Ejemplo de implementación básica (¡ajusta a tus necesidades!):
-    $rutaBaseFiel = __DIR__ . '/../fieles/'; // ¡Asegúrate de que esta ruta sea correcta y segura!
-    $cerPath = $rutaBaseFiel . $rfc . '.cer';
-    $keyPath = $rutaBaseFiel . $rfc . '.key';
-    // La contraseña NO debería estar aquí. Cárgala desde un lugar seguro.
-    $passphrase = 'tu_contraseña_segura';
-
-    if (!file_exists($cerPath) || !file_exists($keyPath)) {
-        return null;
+    // Verificar si la información de la FIEL para ese RFC existe en la sesión
+    if (
+        !isset($_SESSION['fiel_data']) || 
+        !isset($_SESSION['fiel_data'][$rfc]) ||
+        empty($_SESSION['fiel_data'][$rfc]['cer_content']) ||
+        empty($_SESSION['fiel_data'][$rfc]['key_content']) ||
+        empty($_SESSION['fiel_data'][$rfc]['passphrase'])
+    ) {
+        return null; // No hay FIEL para este RFC en la sesión
     }
 
     try {
-        $fiel = Fiel::create(file_get_contents($cerPath), file_get_contents($keyPath), $passphrase);
+        $fielData = $_SESSION['fiel_data'][$rfc];
+        $fiel = Fiel::create(
+            $fielData['cer_content'],
+            $fielData['key_content'],
+            $fielData['passphrase']
+        );
+        
         return $fiel->isValid() ? $fiel : null;
     } catch (Throwable $e) {
+        error_log("Error al crear la FIEL desde la sesión para $rfc: " . $e->getMessage());
         return null;
     }
 }
+// --- FIN DE CAMBIOS ---
 
 
 // --- Lógica Principal ---
@@ -76,8 +84,6 @@ try {
 
     $solicitudes = [];
 
-    // Si se proporciona un ID, se verifica solo esa solicitud.
-    // Si no, se verifican todas las pendientes.
     if ($idSolicitud > 0) {
         $stmt = $db->prepare('SELECT * FROM cf_solicitudes WHERE id_solicitud = ?');
         $stmt->execute([$idSolicitud]);
@@ -114,7 +120,7 @@ try {
 
         $fiel = getFielFromSource($rfc);
         if (!$fiel) {
-            $errores[] = "Error en Solicitud #$idLocal: No se pudo cargar la FIEL para el RFC $rfc.";
+            $errores[] = "Error en Solicitud #$idLocal: No se pudo cargar la FIEL para el RFC $rfc. Por favor, autentíquese de nuevo.";
             continue;
         }
 
@@ -131,7 +137,6 @@ try {
             elseif ($statusRequest->isFailure()) $estadoSAT = 'error';
             elseif ($statusRequest->isExpired()) $estadoSAT = 'vencida';
 
-            // Actualizar la base de datos con el nuevo estado y la fecha de verificación
             $upd = $db->prepare(
                 'UPDATE cf_solicitudes SET estado = ?, ultima_verificacion = ? WHERE id_solicitud = ?'
             );
@@ -142,7 +147,7 @@ try {
         } catch (Throwable $e) {
             $errorMessage = "Error al verificar la solicitud #$idLocal: " . $e->getMessage();
             $errores[] = $errorMessage;
-            // Marcar la solicitud con error en la BD
+            
             $db->prepare('UPDATE cf_solicitudes SET estado = ?, ultima_verificacion = ?, mensaje_error = ? WHERE id_solicitud = ?')
                 ->execute(['error', $ahora, $e->getMessage(), $idLocal]);
         }

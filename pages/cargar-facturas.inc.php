@@ -253,30 +253,14 @@
     </div>
 </div>
 
-
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const modalSat = new bootstrap.Modal(document.getElementById('modalSAT'));
         const modalDescarga = new bootstrap.Modal(document.getElementById('modalDescarga'));
-        let verificationInterval = null;
-        let currentRequestId = null;
-        let autenticadoRFC = null;
-
         const formAutenticacion = document.getElementById('form-autenticacion-efirma');
         const formDescarga = document.getElementById('form-descarga-sat');
-        const tipoDescargaSelect = document.querySelector('select[name="tipo_descarga"]');
-        const rfcInput = document.querySelector('input[name="rfc"]');
-
-        function actualizarRFCPorTipo(tipo) {
-            if (!autenticadoRFC) return;
-            if (tipo === 'emitidas' || tipo === 'recibidas') {
-                rfcInput.value = autenticadoRFC;
-            }
-        }
-
-        tipoDescargaSelect.addEventListener('change', (e) => {
-            actualizarRFCPorTipo(e.target.value);
-        });
+        const rfcInput = formDescarga.querySelector('input[name="rfc"]');
+        let autenticadoRFC = null;
 
         // ---- AUTENTICAR EFIRMA ----
         formAutenticacion.addEventListener('submit', async (e) => {
@@ -297,44 +281,47 @@
                 });
 
                 const result = await response.json();
-
-                if (!result.success) throw new Error(result.message);
+                if (!result.success) {
+                    throw new Error(result.message);
+                }
 
                 autenticadoRFC = result.rfc;
+                rfcInput.value = autenticadoRFC; // Asignamos el RFC al campo del formulario de descarga
 
                 Swal.fire('¡Éxito!', `Autenticado correctamente para el RFC: ${autenticadoRFC}`, 'success');
 
                 modalSat.hide();
                 modalDescarga.show();
-
-                actualizarRFCPorTipo(tipoDescargaSelect.value);
             } catch (error) {
                 Swal.fire('Error', error.message, 'error');
             }
         });
 
+        // ---- SOLICITAR DESCARGA ----
         formDescarga.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (verificationInterval) {
-                clearInterval(verificationInterval);
-                verificationInterval = null;
-            }
+            // --- INICIO DE LA CORRECCIÓN CLAVE ---
+            // Construimos el objeto de datos manualmente para asegurar que los valores son correctos y limpios.
+            const data = {
+                tipo_descarga: formDescarga.querySelector('select[name="tipo_descarga"]').value.trim(),
+                rfc: formDescarga.querySelector('input[name="rfc"]').value.trim(),
+                fecha_inicio: formDescarga.querySelector('input[name="fecha_inicio"]').value,
+                fecha_fin: formDescarga.querySelector('input[name="fecha_fin"]').value
+            };
+            // --- FIN DE LA CORRECCIÓN CLAVE ---
 
-            const formData = new FormData(formDescarga);
-            const data = Object.fromEntries(formData.entries());
-            data.tipo = data.tipo_descarga;
+            // Validaciones de fechas
+            if (!data.fecha_inicio || !data.fecha_fin) {
+                Swal.fire('Atención', 'Debe seleccionar una fecha de inicio y fin.', 'warning');
+                return;
+            }
 
             const fechaInicio = new Date(data.fecha_inicio);
             const fechaFin = new Date(data.fecha_fin);
 
             if (fechaInicio >= fechaFin) {
                 Swal.fire('Rango inválido', 'La fecha de inicio debe ser menor que la fecha final.', 'warning');
-                return;
-            }
-
-            if (!data.fecha_inicio || !data.fecha_fin) {
-                Swal.fire('Atención', 'Debe seleccionar una fecha de inicio y fin.', 'warning');
                 return;
             }
 
@@ -351,6 +338,17 @@
                 return;
             }
 
+            // **IMPORTANTE**: Prueba con una fecha pasada o la fecha de hoy.
+            // El SAT no permite fechas futuras.
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0); // Poner la hora a cero para comparar solo el día
+            if (fechaInicio > hoy || fechaFin > hoy) {
+                Swal.fire('Fecha inválida', 'Las fechas no pueden ser futuras.', 'warning');
+                return;
+            }
+
+
+            // Envío de la solicitud
             try {
                 Swal.fire({
                     title: 'Enviando Solicitud...',
@@ -359,6 +357,8 @@
                     didOpen: () => Swal.showLoading()
                 });
 
+                console.log('Enviando los siguientes datos:', data); // Para depuración
+
                 const response = await fetch('core/solicitar-descarga.php', {
                     method: 'POST',
                     headers: {
@@ -366,26 +366,24 @@
                     },
                     body: JSON.stringify(data)
                 });
-                console.log(data);
 
                 const result = await response.json();
 
-                if (!result.success) throw new Error(result.message);
-
-                currentRequestId = result.requestId;
+                if (!result.success) {
+                    throw new Error(result.message);
+                }
 
                 Swal.fire({
                     icon: 'success',
                     title: 'Solicitud enviada correctamente',
                     html: `
-                    <p>El SAT ha recibido la solicitud <strong>#${result.requestId}</strong>.</p>
-                    <p><b>El SAT puede tardar hasta 24 horas en procesarla.</b></p>
-                    <p>La solicitud se registró en la lista y se actualizará automáticamente cuando haya cambios.</p>
+                <p>El SAT ha recibido la solicitud.</p>
+                <p><b>El SAT puede tardar en procesarla.</b></p>
+                <p>La solicitud se registró en la lista y se actualizará automáticamente cuando haya cambios.</p>
                 `,
                     confirmButtonText: 'Entendido'
                 }).then(() => {
                     modalDescarga.hide();
-                    // Refrescar la lista de solicitudes
                     if (typeof cargarSolicitudes === 'function') {
                         cargarSolicitudes();
                     } else {
@@ -396,40 +394,6 @@
             } catch (error) {
                 Swal.fire('Error', error.message, 'error');
             }
-        });
-
-        async function cancelarSolicitud(requestId) {
-            try {
-                const response = await fetch('core/cargar-cfdi-sat.php?action=cancelar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        requestId
-                    })
-                });
-
-                const result = await response.json();
-
-                Swal.fire({
-                    icon: result.success ? 'success' : 'warning',
-                    title: result.success ? 'Consulta Cancelada' : 'Atención',
-                    text: result.message,
-                    confirmButtonText: 'Entendido'
-                });
-            } catch (error) {
-                console.error("Error al cancelar:", error);
-                Swal.fire('Error', 'No se pudo cancelar la consulta.', 'error');
-            }
-        }
-
-        modalDescarga._element.addEventListener('hidden.bs.modal', () => {
-            if (verificationInterval) {
-                clearInterval(verificationInterval);
-                verificationInterval = null;
-            }
-            currentRequestId = null;
         });
     });
 </script>
