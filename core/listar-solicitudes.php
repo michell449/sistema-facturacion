@@ -1,5 +1,6 @@
 <?php
-//app-m\core\listar-solicitudes.php
+// app-m/core/listar-solicitudes.php
+
 require_once __DIR__ . '/class/db.php';
 
 function ls_html_escape(string $v): string
@@ -14,26 +15,29 @@ try {
         $cols = $db->query('SHOW COLUMNS FROM cf_solicitudes')->fetchAll(PDO::FETCH_COLUMN);
     } catch (Throwable $e) {
     }
+
     $has = fn(string $c) => in_array($c, $cols, true);
     $rfcCol = $has('rfc') ? 'rfc' : ($has('rfc_emisor') ? 'rfc_emisor' : ($has('rfc_receptor') ? 'rfc_receptor' : 'NULL'));
-    // Traer todas las columnas de RFC
+
     $sqlRFC = '';
     if ($has('rfc')) $sqlRFC .= 'rfc,';
     if ($has('rfc_emisor')) $sqlRFC .= 'rfc_emisor,';
     if ($has('rfc_receptor')) $sqlRFC .= 'rfc_receptor,';
     $createdCol = $has('created_at') ? 'created_at' : ($has('fecha_creacion') ? 'fecha_creacion' : 'fecha_ini');
 
-    $fRfc    = isset($_GET['rfc'])    ? trim($_GET['rfc'])    : '';
-    $fTipo   = isset($_GET['tipo'])   ? trim($_GET['tipo'])   : '';
-    $fEstado = isset($_GET['estado']) ? trim($_GET['estado']) : '';
-    $fTexto  = isset($_GET['q'])      ? trim($_GET['q'])      : '';
+    $fRfc    = $_GET['rfc'] ?? '';
+    $fTipo   = $_GET['tipo'] ?? '';
+    $fEstado = $_GET['estado'] ?? '';
+    $fTexto  = $_GET['q'] ?? '';
 
     $where = [];
     $params = [];
+
     if ($fRfc !== '' && $rfcCol !== 'NULL') {
         $where[] = "$rfcCol LIKE ?";
         $params[] = "%$fRfc%";
     }
+
     if ($fTipo !== '' && in_array($fTipo, ['emitidas', 'recibidas', 'emitidos'])) {
         if ($fTipo === 'emitidas') {
             $where[] = "(tipo='emitidas' OR tipo='emitidos')";
@@ -42,10 +46,12 @@ try {
             $params[] = $fTipo;
         }
     }
+
     if ($fEstado !== '' && in_array($fEstado, ['pendiente', 'aceptada', 'terminada', 'rechazada', 'error', 'vencida'])) {
         $where[] = 'estado=?';
         $params[] = $fEstado;
     }
+
     if ($fTexto !== '') {
         $where[] = "(solicitud_id_sat LIKE ? OR $rfcCol LIKE ? OR tipo LIKE ?)";
         $params[] = "%$fTexto%";
@@ -58,6 +64,7 @@ try {
         $sql .= ' WHERE ' . implode(' AND ', $where);
     }
     $sql .= ' ORDER BY id_solicitud DESC LIMIT 100';
+
     $st = $db->prepare($sql);
     $st->execute($params);
     $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -70,21 +77,26 @@ try {
     foreach ($rows as $r) {
         $paquetesDesc = 0;
         $total = (int)($r['total_paquetes'] ?? 0);
+        $paqs = [];
+
         if (!empty($r['paquetes_json'])) {
             $pj = json_decode($r['paquetes_json'], true);
             if (is_array($pj)) {
+                $paqs = $pj;
                 $total = $total ?: count($pj);
                 foreach ($pj as $p) {
                     if (in_array($p['estado'] ?? '', ['descargado', 'procesado'])) $paquetesDesc++;
                 }
             }
         }
+
         $tipoMap = [
             'emitidas' => ['primary', 'Emitidas'],
             'recibidas' => ['success', 'Recibidas'],
         ];
         $tipoValor = $r['tipo'] ?? 'desconocido';
         [$tCls, $tTxt] = $tipoMap[$tipoValor] ?? ['secondary', ucfirst($tipoValor)];
+
         $estados = [
             'pendiente' => ['secondary', '<i class="fas fa-clock me-1"></i>Esperando verificación'],
             'aceptada'  => ['info', '<i class="fas fa-hourglass-half me-1"></i>Aceptada'],
@@ -94,11 +106,14 @@ try {
             'vencida'   => ['warning', '<i class="fas fa-hourglass-end me-1"></i>Vencida']
         ];
         [$eCls, $eTxt] = $estados[$r['estado']] ?? ['secondary', ls_html_escape($r['estado'])];
+
         $rango = ($r['tipo'] === 'folio') ? '<code>UUID</code>' : ls_html_escape(($r['fecha_ini'] ?? '') . ' → ' . ($r['fecha_fin'] ?? ''));
+
         echo '<tr data-id="' . (int)$r['id_solicitud'] . '">';
         echo '<td>' . (int)$r['id_solicitud'] . '</td>';
         echo '<td class="text-break" style="max-width:180px"><small>' . ls_html_escape($r['solicitud_id_sat']) . '</small></td>';
-        // Mostrar RFC correcto según tipo
+
+        // RFC a mostrar
         $rfcMostrar = '';
         if (($r['tipo'] ?? '') === 'recibidas') {
             $rfcMostrar = $r['rfc_receptor'] ?? '';
@@ -108,6 +123,7 @@ try {
             $rfcMostrar = $r['rfc'] ?? ($r['rfc_emisor'] ?? $r['rfc_receptor'] ?? '');
         }
         echo '<td>' . ls_html_escape($rfcMostrar) . '</td>';
+
         echo '<td><span class="badge bg-' . $tCls . '">' . $tTxt . '</span></td>';
         echo '<td><small>' . $rango . '</small></td>';
         echo '<td><span class="badge bg-secondary fw-normal" style="font-size:.75rem;">' . $paquetesDesc . '/' . ($total) . '</span></td>';
@@ -115,17 +131,19 @@ try {
         echo '<td><small>' . ls_html_escape($r['created_at'] ?? '') . '</small></td>';
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
 
-        // --- INICIO DE CAMBIOS ---
-        // Se crea una nueva celda <td> para las acciones
+        // Acciones
         echo '<td>';
-        // Se agrega la clase "btn-verificar-individual" al botón de verificación
-        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
-        if ($paquetesDesc < $total && $total > 0) {
-            echo ' <button class="btn btn-outline-success btn-sm btn-descargar-pend" title="Descargar paquetes pendientes"><i class="fas fa-download"></i></button>';
+        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i>     </a>';
+        echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" title="Descargar paquetes"><i class="fas fa-download"></i></button>';
+        foreach ($paqs as $p) {
+            if (!empty($p['zip_path']) && file_exists(__DIR__ . '/../' . ltrim($p['zip_path'], '/\\'))) {
+                $url = ls_html_escape($p['zip_path']);
+                echo ' <a href="' . $url . '" class="btn btn-link btn-sm" target="_blank" title="Descargar ZIP"><i class="fas fa-file-archive"></i></a>';
+            }
         }
-        echo '</td>';
-        // --- FIN DE CAMBIOS ---
 
+
+        echo '</td>';
         echo '</tr>';
     }
 } catch (Throwable $e) {

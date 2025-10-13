@@ -9,12 +9,14 @@ $autoloadFallback = dirname(__DIR__) . '/vendor/autoload.php';
 if (file_exists($autoloadPrimary)) {
     require_once $autoloadPrimary;
 } elseif (file_exists($autoloadFallback)) {
+    require_once $autoloadFallback;
+} else {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Falta autoload de Composer']);
     exit;
 }
 
-require_once __DIR__ . '/../config.php'; // Ya inicia la sesión con session_start()
+require_once __DIR__ . '/../config.php'; // Aquí supongo que config.php contiene session_start()
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
@@ -39,21 +41,17 @@ function createService(Fiel $fiel): Service
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
-// --- INICIO DE CAMBIOS ---
-// ¡IMPORTANTE! Esta función ahora carga la FIEL desde la sesión del usuario.
 function getFielFromSource(string $rfc): ?Fiel
 {
-    // Verificar si la información de la FIEL para ese RFC existe en la sesión
     if (
-        !isset($_SESSION['fiel_data']) || 
+        !isset($_SESSION['fiel_data']) ||
         !isset($_SESSION['fiel_data'][$rfc]) ||
         empty($_SESSION['fiel_data'][$rfc]['cer_content']) ||
         empty($_SESSION['fiel_data'][$rfc]['key_content']) ||
         empty($_SESSION['fiel_data'][$rfc]['passphrase'])
     ) {
-        return null; // No hay FIEL para este RFC en la sesión
+        return null;
     }
-
     try {
         $fielData = $_SESSION['fiel_data'][$rfc];
         $fiel = Fiel::create(
@@ -61,15 +59,12 @@ function getFielFromSource(string $rfc): ?Fiel
             $fielData['key_content'],
             $fielData['passphrase']
         );
-        
         return $fiel->isValid() ? $fiel : null;
     } catch (Throwable $e) {
         error_log("Error al crear la FIEL desde la sesión para $rfc: " . $e->getMessage());
         return null;
     }
 }
-// --- FIN DE CAMBIOS ---
-
 
 // --- Lógica Principal ---
 
@@ -131,23 +126,100 @@ try {
             $statusRequest = $verify->getStatusRequest();
             $estadoSAT = 'desconocido';
 
-            if ($statusRequest->isFinished()) $estadoSAT = 'terminada';
-            elseif ($statusRequest->isInProgress() || $statusRequest->isAccepted()) $estadoSAT = 'aceptada';
-            elseif ($statusRequest->isRejected()) $estadoSAT = 'rechazada';
-            elseif ($statusRequest->isFailure()) $estadoSAT = 'error';
-            elseif ($statusRequest->isExpired()) $estadoSAT = 'vencida';
+            if ($statusRequest->isFinished()) {
+                $estadoSAT = 'terminada';
+            } elseif ($statusRequest->isInProgress() || $statusRequest->isAccepted()) {
+                $estadoSAT = 'aceptada';
+            } elseif ($statusRequest->isRejected()) {
+                $estadoSAT = 'rechazada';
+            } elseif ($statusRequest->isFailure()) {
+                $estadoSAT = 'error';
+            } elseif ($statusRequest->isExpired()) {
+                $estadoSAT = 'vencida';
+            }
 
+            // Obtener paquetes sólo si está terminada
+            $paquetesList = [];
+            if ($estadoSAT === 'terminada') {
+                $packageIds = $verify->getPackagesIds();
+                foreach ($packageIds as $pid) {
+                    $paquetesList[] = [
+                        'package_id' => $pid,
+                        'estado' => 'pendiente',
+                        'zip_path' => null,
+                        'fecha_descarga' => null,
+                        'mensaje_error' => null,
+                        'procesado' => 0
+                    ];
+                }
+
+                // Ahora descargar cada paquete
+                $baseTmp = __DIR__ . '/../uploads/tmp';
+                @mkdir($baseTmp, 0775, true);
+
+                // obtener RFC de nuevo (por si)
+                $rfcSelStmt = $db->prepare('SELECT rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
+                $rfcSelStmt->execute([$idLocal]);
+                $rr = $rfcSelStmt->fetch(PDO::FETCH_ASSOC);
+                $rfcForPath = $rr['rfc_emisor'] ?: $rr['rfc_receptor'];
+
+                foreach ($paquetesList as &$p) {
+                    $pid = $p['package_id'];
+                    try {
+                        $zipContents = $service->download($pid);
+
+                        $pathDir = $baseTmp . '/' . $rfcForPath . '/' . $idLocal;
+                        @mkdir($pathDir, 0775, true);
+
+                        $filename = $pathDir . '/' . $pid . '.zip';
+                        $bytes = file_put_contents($filename, $zipContents);
+                        if ($bytes === false) {
+                            throw new \Exception("No se pudo escribir el archivo ZIP: $filename");
+                        }
+
+                        $relPath = "uploads/tmp/{$rfcForPath}/{$idLocal}/{$pid}.zip";
+
+                        $p['estado'] = 'descargado';
+                        $p['zip_path'] = $relPath;
+                        $p['fecha_descarga'] = date('Y-m-d H:i:s');
+                    } catch (Throwable $e) {
+                        $p['estado'] = 'error';
+                        $p['mensaje_error'] = $e->getMessage();
+                    }
+                }
+                unset($p); // romper referencia
+            } else {
+                // Si no es terminada, no hay paquetes descargados aún
+                // Pero podría conservar paquetes previos; aquí dejamos paquetesList vacío
+            }
+
+            // Si ya hay un JSON previo de paquetes en base de datos, puedes combinarlo
+            // por simplicidad, sobrescribo paquetes_json con los nuevos
             $upd = $db->prepare(
-                'UPDATE cf_solicitudes SET estado = ?, ultima_verificacion = ? WHERE id_solicitud = ?'
+                'UPDATE cf_solicitudes 
+                 SET estado = ?, ultima_verificacion = ?, paquetes_json = ?, total_paquetes = ?, fecha_terminada = CASE WHEN ? = "terminada" THEN ? ELSE fecha_terminada END
+                 WHERE id_solicitud = ?'
             );
-            $upd->execute([$estadoSAT, $ahora, $idLocal]);
+
+            $paquetesJson = json_encode($paquetesList);
+            $totalPaqueteCount = count($paquetesList);
+
+            $upd->execute([
+                $estadoSAT,
+                $ahora,
+                $paquetesJson,
+                $totalPaqueteCount,
+                $estadoSAT,
+                $ahora,
+                $idLocal
+            ]);
 
             $nuevosEstados[$idLocal] = $estadoSAT;
             $verificadas++;
         } catch (Throwable $e) {
             $errorMessage = "Error al verificar la solicitud #$idLocal: " . $e->getMessage();
             $errores[] = $errorMessage;
-            
+
             $db->prepare('UPDATE cf_solicitudes SET estado = ?, ultima_verificacion = ?, mensaje_error = ? WHERE id_solicitud = ?')
                 ->execute(['error', $ahora, $e->getMessage(), $idLocal]);
         }

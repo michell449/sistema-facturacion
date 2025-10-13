@@ -433,3 +433,19 @@
 [2025-10-13 06:29:18] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
 [2025-10-13 06:40:04] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
 [2025-10-13 06:43:59] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:07:41] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:12:36] Error autenticando FIEL - {"error":"Cannot open private key: error:1C800064:Provider routines::bad decrypt"}
+[2025-10-13 17:12:51] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:22:34] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:33:53] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:36:59] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:43:28] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-13 17:44:42] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 17:52:16] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 18:30:10] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 20:00:46] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 20:16:05] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 20:48:19] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 21:58:30] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 22:00:06] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
+[2025-10-13 22:37:12] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}

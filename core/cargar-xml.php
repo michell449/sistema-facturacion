@@ -8,12 +8,11 @@ ini_set('display_errors', 1);
 libxml_use_internal_errors(true);
 error_reporting(E_ALL);
 
-// límites y paths
+
 $maxFileSize = 10 * 1024 * 1024; // 10 MB por archivo (ajusta)
 $uploadTmpDir = __DIR__ . "/../uploads/tmp/";
 if (!is_dir($uploadTmpDir)) mkdir($uploadTmpDir, 0755, true);
 
-// helper para parsear un XML string y devolver array de datos o false
 function parseCfdiXmlString($xmlString)
 {
     libxml_use_internal_errors(true);
@@ -26,7 +25,6 @@ function parseCfdiXmlString($xmlString)
         $names[$k] = $v;
     }
 
-    // función auxiliar para buscar nodos por local-name
     $getByLocal = function ($node, $local) {
         $res = $node->xpath("//*[local-name()='$local']");
         return ($res && count($res) > 0) ? $res[0] : null;
@@ -35,15 +33,14 @@ function parseCfdiXmlString($xmlString)
     $comprobante = $getByLocal($xml, 'Comprobante') ?: $xml;
     $emisor      = $getByLocal($xml, 'Emisor');
     $receptor    = $getByLocal($xml, 'Receptor');
-    // timbre normalmente está en complemento -> TimbreFiscalDigital
+    // TimbreFiscalDigital
     $timbre      = $getByLocal($xml, 'TimbreFiscalDigital');
 
     if (!$comprobante || !$emisor || !$receptor || !$timbre) {
-        // devolver false si faltan nodos esenciales
         return false;
     }
 
-    // atributos (ver nombres comunes, uso string cast)
+
     $data = [];
     $data['uuid']               = (string) $timbre['UUID'] ?: '';
     $data['version']            = (string) $comprobante['Version'] ?: (string) $comprobante['version'] ?: '';
@@ -78,10 +75,10 @@ function parseCfdiXmlString($xmlString)
     return $data;
 }
 
-// recibe archivos (xml o zip) - soporta múltiples via 'xmlFile' o 'zipFile'
+// recibe archivos xml o zip
 $results = ['success' => true, 'parsed' => [], 'errors' => []];
 
-// function to handle single uploaded xml tmp file
+
 $handleXmlTmp = function ($tmpPath, $originalName) use (&$results, $uploadTmpDir) {
     $contents = file_get_contents($tmpPath);
     $parsed = parseCfdiXmlString($contents);
@@ -89,14 +86,14 @@ $handleXmlTmp = function ($tmpPath, $originalName) use (&$results, $uploadTmpDir
         $results['errors'][] = "Archivo no es CFDI válido: $originalName";
         return;
     }
-    // generar nombre temporal único y guardar
+    // generar nombre temporal y guardar
     $tmpFilename = uniqid('cfdi_') . '.xml';
     $destTmp = $uploadTmpDir . $tmpFilename;
     if (file_put_contents($destTmp, $contents) === false) {
         $results['errors'][] = "No se pudo guardar temporal: $originalName";
         return;
     }
-    // añadir info para el cliente (incluye ruta temporal para posterior guardado)
+
     $parsed['_tmp_file'] = $tmpFilename;
     $results['parsed'][] = $parsed;
 };
@@ -104,7 +101,6 @@ $handleXmlTmp = function ($tmpPath, $originalName) use (&$results, $uploadTmpDir
 // revisión de archivos subidos por input xmlFile o zipFile
 if (!empty($_FILES)) {
     foreach ($_FILES as $inputName => $fileInfo) {
-        // Soporta múltiples archivos por input (array)
         if (is_array($fileInfo['name'])) {
             $count = count($fileInfo['name']);
             for ($i = 0; $i < $count; $i++) {
@@ -157,7 +153,6 @@ if (!empty($_FILES)) {
                 }
             }
         } else {
-            // caso simple (no array)
             if ($fileInfo['error'] !== UPLOAD_ERR_OK) {
                 $results['errors'][] = "Error subiendo archivo: " . $fileInfo['name'];
                 continue;

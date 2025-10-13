@@ -22,8 +22,7 @@ use PhpCfdi\SatWsDescargaMasiva\Service;
 use GuzzleHttp\Client;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 
-// --- INICIA SECCIÓN DE EJECUCIÓN EN SEGUNDO PLANO ---
-// Esta parte del código se ejecuta cuando se llama desde la línea de comandos con el argumento --background
+
 if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
     $idLocal = (int)$argv[2];
     $requestId = $argv[3] ?? '';
@@ -37,15 +36,10 @@ if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
     if (!$row) {
         exit("Solicitud $idLocal no encontrada\n");
     }
-
-    // ¡CAMBIO IMPORTANTE!
-    // Se obtiene el RFC de la solicitud para poder cargar la FIEL sin depender de la sesión.
     $rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
 
-    // Se asume que tienes una función `getFielFromDatabase` o un mecanismo similar
-    // para obtener los datos de la FIEL de forma segura (por ejemplo, desde la base de datos o un archivo seguro).
-    // Esta es la parte que necesitas implementar según la arquitectura de tu aplicación.
-    $fiel = getFielFromSource($rfc); // Debes implementar esta función
+    
+    $fiel = getFielFromSource($rfc); 
 
     if (!$fiel) {
         $db->prepare('UPDATE cf_solicitudes SET estado=?, mensaje_error=?, ultima_verificacion=NOW() WHERE id_solicitud=?')
@@ -113,24 +107,19 @@ function respond($data, $code = 200)
 }
 
 /**
- * ¡NUEVA FUNCIÓN! (Ejemplo)
- * Debes implementar esta función para obtener la FIEL desde una fuente segura.
- * NO uses la sesión aquí.
- *
  * @param string $rfc
  * @return Fiel|null
  */
 function getFielFromSource(string $rfc): ?Fiel
 {
-    // Ejemplo: Cargar la FIEL desde archivos guardados en una ubicación segura.
     // La ruta a estos archivos podría estar en tu archivo de configuración.
-    $rutaBaseFiel = __DIR__ . '/../fieles/'; // ¡Asegúrate de que esta ruta sea correcta y segura!
+    $rutaBaseFiel = __DIR__ . '/../fieles/'; //
     $cerPath = $rutaBaseFiel . $rfc . '.cer';
     $keyPath = $rutaBaseFiel . $rfc . '.key';
     $passphrase = 'tu_contraseña'; // ¡Esto debería obtenerse de forma segura! No la escribas directamente en el código.
 
     if (!file_exists($cerPath) || !file_exists($keyPath)) {
-        return null; // O maneja el error como prefieras
+        return null; 
     }
 
     try {
@@ -141,11 +130,10 @@ function getFielFromSource(string $rfc): ?Fiel
         );
 
         if (!$fiel->isValid()) {
-            return null; // O maneja el error de FIEL inválida/expirada
+            return null; 
         }
         return $fiel;
     } catch (Throwable $e) {
-        // Log del error si es necesario
         error_log("Error al crear la FIEL para $rfc: " . $e->getMessage());
         return null;
     }
@@ -154,7 +142,6 @@ function getFielFromSource(string $rfc): ?Fiel
 
 function ensureFiel(): Fiel
 {
-    // Esta función sigue siendo útil para la parte web (no en segundo plano)
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -181,8 +168,6 @@ function createService(Fiel $fiel): Service
 }
 
 
-// --- INICIA SECCIÓN DE LA PETICIÓN POST ---
-// Esta parte del código se ejecuta cuando un usuario hace una petición POST desde el navegador.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(['success' => false, 'message' => 'Sólo POST'], 405);
 }
@@ -211,7 +196,7 @@ respond([
 ]);
 
 // Ejecutar en segundo plano la verificación
-$phpPath = PHP_BINARY; // Usa la constante PHP_BINARY para encontrar la ruta de PHP
+$phpPath = PHP_BINARY; 
 $scriptPath = __FILE__;
 $cmd = sprintf(
     '%s %s --background %d %s > /dev/null 2>&1 &',
@@ -222,4 +207,3 @@ $cmd = sprintf(
 );
 exec($cmd);
 exit;
-// --- FIN DE LA SECCIÓN DE LA PETICIÓN POST ---

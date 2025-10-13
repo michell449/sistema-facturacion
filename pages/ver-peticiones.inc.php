@@ -73,10 +73,6 @@
             return map[estado] || `<span class="badge bg-dark">${estado}</span>`;
         }
 
-        /**
-         * Función UNIFICADA para verificar solicitudes con el SAT y actualizar la base de datos.
-         * Si no se pasa idSolicitud, verificará todas las pendientes.
-         */
         async function verificarConSAT(idSolicitud = null) {
             const payload = {};
             if (idSolicitud) {
@@ -126,8 +122,7 @@
                 estadoCol.innerHTML = parseEstadoBadge(nuevoEstado);
             }
 
-            // Actualizar columna de última verificación
-            const ultVerifCell = fila.cells[8]; // Asegúrate que el índice '8' sea correcto para tu tabla
+            const ultVerifCell = fila.cells[8];
             if (ultVerifCell) {
                 ultVerifCell.textContent = new Date().toLocaleString();
             }
@@ -135,9 +130,8 @@
             console.log(`✅ Fila actualizada para la solicitud: ${idSolicitud}`);
         }
 
-        // --- LÓGICA PARA EL BOTÓN "VERIFICAR TODAS" ---
         btnVerificarTodas.addEventListener('click', async function() {
-            console.log('🚀 Iniciando verificación de todas las solicitudes...');
+            console.log(' Iniciando verificación de todas las solicitudes...');
 
             const btnOriginalHTML = this.innerHTML;
             this.disabled = true;
@@ -155,7 +149,6 @@
                     text: resultado.message,
                 });
 
-                // Actualizar todas las filas correspondientes
                 if (resultado.nuevos_estados) {
                     for (const id in resultado.nuevos_estados) {
                         actualizarFilaTabla(id, resultado.nuevos_estados[id]);
@@ -170,13 +163,12 @@
             }
         });
 
-        // --- LÓGICA PARA LOS BOTONES INDIVIDUALES ---
+
         document.addEventListener('click', async function(e) {
             const btnIndividual = e.target.closest('.btn-verificar-individual'); // Usar una clase específica
             if (!btnIndividual) {
                 return;
             }
-
             e.preventDefault();
 
             const idSolicitud = btnIndividual.getAttribute('data-id');
@@ -217,6 +209,49 @@
                 });
             }
         });
+
+        document.addEventListener('click', async function(e) {
+    const btn = e.target.closest('.btn-descargar-paquetes');
+    if (!btn) return;
+
+    const fila = btn.closest('tr');
+    const idSolicitud = fila.getAttribute('data-id');
+
+    btn.disabled = true;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+
+    try {
+        const resp = await fetch('core/actualizar-estado-solicitud.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_solicitud: parseInt(idSolicitud, 10) })
+        });
+        const data = await resp.json();
+        console.log('Respuesta descarga paquetess:', data);
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Proceso completado',
+                text: data.message,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            // Recargar la página para que se muestren los links ZIP
+            location.reload();
+        } else {
+            Swal.fire('Error', data.message || 'No se pudo descargar paquetes', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Error de conexión al servidor', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+    }
+});
+
 
         console.log('✅ Sistema de verificación v2.0 inicializado correctamente.');
     });

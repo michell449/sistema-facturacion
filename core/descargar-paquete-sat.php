@@ -35,25 +35,26 @@ function ensureFiel(): Fiel
     }
 }
 
-function createService(Fiel $fiel): Service
-{
+function createService(Fiel $fiel): Service {
     $client = new Client(['timeout' => 90]);
     $webClient = new GuzzleWebClient($client);
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
-$idSolicitud = (int)($_POST['id_solicitud'] ?? 0);
-if ($idSolicitud <= 0) {
+$input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    respond(['success' => false, 'message' => 'JSON inválido'], 400);
+}
+
+$idLocal = (int)($input['id_solicitud'] ?? 0);
+if ($idLocal <= 0) {
     respond(['success' => false, 'message' => 'ID de solicitud inválido'], 400);
 }
 
-// Crear conexión
 $db = (new Database())->getConnection();
-
-$sel = $db->prepare('SELECT solicitud_id_sat, paquetes_json,  FROM cf_solicitudes WHERE id_solicitud = ?');
-$sel->execute([$idSolicitud]);
+$sel = $db->prepare('SELECT solicitud_id_sat, paquetes_json, rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
+$sel->execute([$idLocal]);
 $row = $sel->fetch(PDO::FETCH_ASSOC);
-
 if (!$row) {
     respond(['success' => false, 'message' => 'Solicitud no encontrada'], 404);
 }
@@ -65,12 +66,10 @@ if (!is_array($paquetes) || empty($paquetes)) {
 
 $fiel = ensureFiel();
 $service = createService($fiel);
-$rfc = $row['rfc'] ?? 'desconocido';
 
-// Ruta de descarga
-$basePath = __DIR__ . '/../descargas';
-$downloadPath = $basePath . '/' . $rfc . '/' . $idSolicitud;
-@mkdir($downloadPath, 0775, true);
+$rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
+$baseTmp = __DIR__ . '/../uploads/tmp';
+@mkdir($baseTmp, 0775, true);
 
 $nuevosPaquetes = [];
 $descargados = 0;
@@ -80,30 +79,38 @@ foreach ($paquetes as $p) {
         $nuevosPaquetes[] = $p;
         continue;
     }
-
-    $packageId = $p['package_id'] ?? '';
-    if (!$packageId) continue;
-
+    $pid = $p['package_id'] ?? '';
+    if (!$pid) {
+        $nuevosPaquetes[] = $p;
+        continue;
+    }
     try {
-        $zipContents = $service->download($packageId);
-        $zipFilename = $downloadPath . '/' . $packageId . '.zip';
+        $zipContents = $service->download($pid);
 
-        file_put_contents($zipFilename, $zipContents);
+        $pathDir = $baseTmp . '/' . $rfc . '/' . $idLocal;
+        @mkdir($pathDir, 0775, true);
+
+        $filename = $pathDir . '/' . $pid . '.zip';
+        $bytes = file_put_contents($filename, $zipContents);
+        if ($bytes === false) {
+            throw new \Exception("No se pudo escribir ZIP: $filename");
+        }
+
+        $relPath = "uploads/tmp/{$rfc}/{$idLocal}/{$pid}.zip";
 
         $p['estado'] = 'descargado';
-        $p['zip_path'] = $zipFilename;
+        $p['zip_path'] = $relPath;
         $p['fecha_descarga'] = date('Y-m-d H:i:s');
         $descargados++;
     } catch (Throwable $e) {
         $p['estado'] = 'error';
         $p['mensaje_error'] = $e->getMessage();
     }
-
     $nuevosPaquetes[] = $p;
 }
 
 $upd = $db->prepare('UPDATE cf_solicitudes SET paquetes_json = ?, ultima_verificacion = NOW() WHERE id_solicitud = ?');
-$upd->execute([json_encode($nuevosPaquetes), $idSolicitud]);
+$upd->execute([json_encode($nuevosPaquetes), $idLocal]);
 
 respond([
     'success' => true,

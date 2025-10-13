@@ -8,7 +8,7 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php'; // Asegura que la sesión esté iniciada
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
@@ -20,8 +20,9 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 use GuzzleHttp\Client;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
-
-// --- Funciones de Ayuda ---
+use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
+use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceType;
 
 function respond($data, $code = 200)
 {
@@ -49,7 +50,7 @@ function getFielFromSource(string $rfc): ?Fiel
             $fielData['key_content'],
             $fielData['passphrase']
         );
-        
+
         return $fiel->isValid() ? $fiel : null;
     } catch (Throwable $e) {
         error_log("Error al crear la FIEL desde la sesión para $rfc: " . $e->getMessage());
@@ -64,8 +65,6 @@ function createService(Fiel $fiel): Service
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
-
-// --- Lógica Principal ---
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(['success' => false, 'message' => 'Método no permitido'], 405);
@@ -101,21 +100,21 @@ try {
 }
 
 $tipoSolicitud = 'cfdi';
-
-// 3. Limpiar y validar rigurosamente el tipo de descarga.
 $tipoDescarga = isset($input['tipo_descarga']) ? strtolower(trim($input['tipo_descarga'])) : '';
 
 $rfcSolicitante = $input['rfc'];
 $rfcEmisor = '';
 $rfcReceptor = '';
-$rfcAutenticacion = $rfcSolicitante; 
+$rfcAutenticacion = $rfcSolicitante;
 
 if ($tipoDescarga === 'emitidos' || $tipoDescarga === 'emitidas') {
     $rfcEmisor = $rfcSolicitante;
-    $tipoDescarga = 'emitidos'; // Se normaliza a 'emitidos'
+    $tipoDescarga = 'emitidos';
+    $tipoSolicitudBD = 'emitidas';
 } elseif ($tipoDescarga === 'recibidos' || $tipoDescarga === 'recibidas') {
     $rfcReceptor = $rfcSolicitante;
-    $tipoDescarga = 'recibidos'; // Se normaliza a 'recibidos'
+    $tipoDescarga = 'recibidos';
+    $tipoSolicitudBD = 'recibidas';
 } else {
     $receivedValue = $input['tipo_descarga'] ?? '[NO SE RECIBIÓ VALOR]';
     respond(['success' => false, 'message' => "El tipo de descarga no es válido. Se recibió el valor: '" . $receivedValue . "'"], 400);
@@ -135,14 +134,16 @@ try {
     $period = new DateTimePeriod($start, $end);
 
     $downloadType = ($tipoDescarga === 'recibidos') ? DownloadType::received() : DownloadType::issued();
-   
-    
-    $requestType = RequestType::cfdi();
 
-    $queryParams = \PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters::create(
+    $requestType = RequestType::xml();
+
+    $serviceType = ServiceType::cfdi();
+
+    $queryParams = QueryParameters::create(
         $period,
         $downloadType,
-        $requestType
+        $requestType,
+        $serviceType
     );
 
     $queryResult = $service->query($queryParams);
@@ -154,20 +155,32 @@ try {
 
     $db = (new Database())->getConnection();
     $stmt = $db->prepare(
-        'INSERT INTO cf_solicitudes (solicitud_id_sat, fecha_solicitud, fecha_inicial, fecha_final, rfc_emisor, rfc_receptor, tipo_solicitud, estado, mensaje)
-         VALUES (?, NOW(), ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO cf_solicitudes (
+        solicitud_id_sat, fecha_creacion, fecha_terminada, ultima_verificacion,
+        estado, tipo, folio, fecha_ini, fecha_fin, total_paquetes, total_cfdis,
+        mensaje_error, rfc_emisor, rfc_receptor, token
+    ) VALUES (
+        ?, NOW(), NULL, NULL,
+        ?, ?, ?, ?, ?, 0, 0,
+        NULL, ?, ?, ?
+    )'
     );
+
+    $token = bin2hex(random_bytes(10)); 
+
     $stmt->execute([
-        $queryResult->getRequestId(),
-        $start->format('Y-m-d H:i:s'),
-        $end->format('Y-m-d H:i:s'),
+        $queryResult->getRequestId(), 
+        'aceptada',             
+        $tipoSolicitudBD,       
+        $status->getMessage(),        
+        $start->format('Y-m-d'),   
+        $end->format('Y-m-d'),    
         $rfcEmisor ?: null,
-        $rfcReceptor ?: null,
-        $tipoSolicitud,
-        'aceptada',
-        $status->getMessage()
+        $rfcReceptor ?: null,         
+        $token                        
     ]);
-    
+
+
     $idSolicitud = $db->lastInsertId();
 
     respond([
@@ -180,7 +193,6 @@ try {
             'message' => $status->getMessage()
         ]
     ]);
-
 } catch (\Throwable $e) {
     error_log("Error en solicitar-descarga.php: " . $e->getMessage());
     respond(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()], 500);

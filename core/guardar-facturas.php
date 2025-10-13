@@ -4,7 +4,6 @@ require_once __DIR__ . "/../vendor/autoload.php";
 require_once __DIR__ . "/../config.php"; // $conn (mysqli)
 header('Content-Type: application/json; charset=utf-8');
 
-//librerías necesarias de cfdi
 
 use CfdiUtils\Nodes\XmlNodeUtils;
 use PhpCfdi\CfdiToPdf\Converter;
