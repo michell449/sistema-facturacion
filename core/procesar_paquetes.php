@@ -12,9 +12,6 @@ use PhpCfdi\CfdiToPdf\CfdiDataBuilder;
 
 header('Content-Type: application/json; charset=utf-8');
 
-// --- INICIO DE FUNCIONES REUTILIZADAS ---
-// (Copiadas desde guardar-facturas.php y cargar-xml.php para mantener este script autocontenido)
-
 /**
  * Convierte una cadena de texto XML de un CFDI a un archivo PDF.
  */

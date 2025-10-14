@@ -138,12 +138,11 @@ try {
                 $estadoSAT = 'vencida';
             }
 
-            // Obtener paquetes sólo si está terminada
             $paquetesList = [];
             if ($estadoSAT === 'terminada') {
                 $packageIds = $verify->getPackagesIds();
                 foreach ($packageIds as $pid) {
-                    $paquetesList[] = [
+                    $paquetesList[$pid] = [ // Usar el ID del paquete como clave para evitar duplicados
                         'package_id' => $pid,
                         'estado' => 'pendiente',
                         'zip_path' => null,
@@ -153,26 +152,41 @@ try {
                     ];
                 }
 
-                // Ahora descargar cada paquete
                 $baseTmp = __DIR__ . '/../uploads/tmp';
                 @mkdir($baseTmp, 0775, true);
 
-                // obtener RFC de nuevo (por si)
                 $rfcSelStmt = $db->prepare('SELECT rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
                 $rfcSelStmt->execute([$idLocal]);
                 $rr = $rfcSelStmt->fetch(PDO::FETCH_ASSOC);
                 $rfcForPath = $rr['rfc_emisor'] ?: $rr['rfc_receptor'];
 
-                foreach ($paquetesList as &$p) {
-                    $pid = $p['package_id'];
+                foreach ($paquetesList as $pid => &$p) {
                     try {
-                        $zipContents = $service->download($pid);
+                        // --- INICIO DE LA CORRECCIÓN ---
+
+                        // 1. La función download() devuelve un objeto DownloadResult.
+                        $downloadResult = $service->download($pid);
+
+                        // 2. Obtenemos el contenido del paquete, que está en base64.
+                        $packageContent = $downloadResult->getPackageContent();
+
+                        // 3. Decodificamos el contenido de base64 a binario.
+                        $zipData = base64_decode($packageContent);
+
+                        if ($zipData === false) {
+                            throw new \Exception("El contenido del paquete {$pid} no es un base64 válido.");
+                        }
 
                         $pathDir = $baseTmp . '/' . $rfcForPath . '/' . $idLocal;
                         @mkdir($pathDir, 0775, true);
 
                         $filename = $pathDir . '/' . $pid . '.zip';
-                        $bytes = file_put_contents($filename, $zipContents);
+
+                        // 4. Guardamos el contenido ya decodificado.
+                        $bytes = file_put_contents($filename, $zipData);
+
+                        // --- FIN DE LA CORRECCIÓN ---
+
                         if ($bytes === false) {
                             throw new \Exception("No se pudo escribir el archivo ZIP: $filename");
                         }
@@ -188,20 +202,23 @@ try {
                     }
                 }
                 unset($p); // romper referencia
-            } else {
-                // Si no es terminada, no hay paquetes descargados aún
-                // Pero podría conservar paquetes previos; aquí dejamos paquetesList vacío
             }
 
-            // Si ya hay un JSON previo de paquetes en base de datos, puedes combinarlo
-            // por simplicidad, sobrescribo paquetes_json con los nuevos
+            // Conservar información de paquetes ya descargados si se vuelve a verificar
+            $paquetesPrevios = json_decode($solicitud['paquetes_json'] ?? '[]', true);
+            foreach ($paquetesPrevios as $previo) {
+                if (isset($previo['package_id']) && isset($paquetesList[$previo['package_id']]) && $paquetesList[$previo['package_id']]['estado'] === 'pendiente') {
+                    $paquetesList[$previo['package_id']] = $previo;
+                }
+            }
+
             $upd = $db->prepare(
                 'UPDATE cf_solicitudes 
-                 SET estado = ?, ultima_verificacion = ?, paquetes_json = ?, total_paquetes = ?, fecha_terminada = CASE WHEN ? = "terminada" THEN ? ELSE fecha_terminada END
-                 WHERE id_solicitud = ?'
+             SET estado = ?, ultima_verificacion = ?, paquetes_json = ?, total_paquetes = ?, fecha_terminada = CASE WHEN ? = "terminada" THEN ? ELSE fecha_terminada END
+                WHERE id_solicitud = ?'
             );
 
-            $paquetesJson = json_encode($paquetesList);
+            $paquetesJson = json_encode(array_values($paquetesList)); // Re-indexar el array
             $totalPaqueteCount = count($paquetesList);
 
             $upd->execute([

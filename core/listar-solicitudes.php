@@ -130,18 +130,27 @@ try {
         echo '<td class="estado-col"><span class="badge bg-' . $eCls . '">' . $eTxt . '</span></td>';
         echo '<td><small>' . ls_html_escape($r['created_at'] ?? '') . '</small></td>';
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
+
+        // --- INICIO DE LA CORRECCIÓN DE BOTONES ---
         echo '<td>';
-        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i  class="fas fa-sync-alt"></i></a>';
-        echo '</td>';
-        echo '<td>';
-        echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" title="Descargar paquetes"><i class="fas fa-download"></i></button>';
+        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
+        
+        // Botón para procesar solo si el estado es 'terminada' y hay paquetes descargados
+        if ($r['estado'] === 'terminada' && $paquetesDesc > 0) {
+            echo ' <button class="btn btn-success btn-sm btn-procesar-paquetes" data-id="' . $r['id_solicitud'] . '" title="Procesar Paquetes Descargados"><i class="fas fa-cogs"></i></button>';
+        } else {
+            echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" title="Descargar paquetes de la solicitud"><i class="fas fa-download"></i></button>';
+        }
+        
         foreach ($paqs as $p) {
             if (!empty($p['zip_path']) && file_exists(__DIR__ . '/../' . ltrim($p['zip_path'], '/\\'))) {
                 $url = ls_html_escape($p['zip_path']);
-                echo ' <a href="' . $url . '" class="btn btn-link btn-sm" target="_blank" title="Descargar ZIP"><i class="fas fa-file-archive"></i></a>';
+                echo ' <a href="' . $url . '" class="btn btn-link btn-sm" target="_blank" title="Descargar ZIP ' . $p['id'] . '"><i class="fas fa-file-archive"></i></a>';
             }
         }
         echo '</td>';
+        // --- FIN DE LA CORRECCIÓN DE BOTONES ---
+        
         echo '</tr>';
     }
 } catch (Throwable $e) {
