@@ -126,7 +126,9 @@ try {
             continue;
         }
 
-        $zipfile = __DIR__ . '/../' . ltrim($paquete['zip_path'], '/\\');
+        $projectRoot = dirname(__DIR__);
+        $zipfile = $projectRoot . DIRECTORY_SEPARATOR . ltrim($paquete['zip_path'], '/\\');
+    
 
         if (!file_exists($zipfile)) {
             $errors[] = "No se encontró el archivo ZIP: " . $paquete['zip_path'];
@@ -174,10 +176,26 @@ try {
                 $stmtInsert = $conn->prepare("INSERT INTO facturas (uuid, version, fecha, subtotal, total, moneda, metodo_pago, forma_pago, lugar_expedicion, no_certificado, tipo_comprobante, emisor_rfc, emisor_nombre, receptor_rfc, receptor_nombre, receptor_uso_cfdi, xml_file, pdf_file, serie, folio) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
                 $stmtInsert->bind_param(
                     "ssssssssssssssssssss",
-                    $uuid, $data['version'], $data['fecha'], $data['subtotal'], $data['total'], $data['moneda'],
-                    $data['metodo_pago'], $data['forma_pago'], $data['lugar_expedicion'], $data['no_certificado'],
-                    $data['tipo_comprobante'], $data['emisor_rfc'], $data['emisor_nombre'], $data['receptor_rfc'],
-                    $data['receptor_nombre'], $data['receptor_uso_cfdi'], $finalXmlName, $finalPdfName, $data['serie'], $data['folio']
+                    $uuid,
+                    $data['version'],
+                    $data['fecha'],
+                    $data['subtotal'],
+                    $data['total'],
+                    $data['moneda'],
+                    $data['metodo_pago'],
+                    $data['forma_pago'],
+                    $data['lugar_expedicion'],
+                    $data['no_certificado'],
+                    $data['tipo_comprobante'],
+                    $data['emisor_rfc'],
+                    $data['emisor_nombre'],
+                    $data['receptor_rfc'],
+                    $data['receptor_nombre'],
+                    $data['receptor_uso_cfdi'],
+                    $finalXmlName,
+                    $finalPdfName,
+                    $data['serie'],
+                    $data['folio']
                 );
 
                 if ($stmtInsert->execute()) {

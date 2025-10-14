@@ -22,7 +22,6 @@
                             <th style="width:11%;">Creada</th>
                             <th style="width:12%;">Últ. Verif.</th>
                             <th style="width:5%;">Verificar</th>
-                            <th style="width:5%;">Descargar</th>
                         </tr>
                     </thead>
                     <tbody class="text-center" id="tbody-solicitudes">

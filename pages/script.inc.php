@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     title: '¡Proceso Completado!',
                     text: result.message,
                 }).then(() => {
-                    window.location.href = 'panel?pg=cargar-facturas'; // Redirigir a facturas
+                    location.reload();
                 });
 
             } catch (error) {

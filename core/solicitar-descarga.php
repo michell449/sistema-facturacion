@@ -21,7 +21,6 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
 use GuzzleHttp\Client;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
-use PhpCfdi\SatWsDescargaMasiva\Shared\DocumentStatus;
 use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceType;
 
 function respond($data, $code = 200)
@@ -33,6 +32,10 @@ function respond($data, $code = 200)
 
 function getFielFromSource(string $rfc): ?Fiel
 {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
     if (
         !isset($_SESSION['fiel_data']) ||
         !isset($_SESSION['fiel_data'][$rfc]) ||
@@ -126,6 +129,28 @@ if (!$fiel) {
     respond(['success' => false, 'message' => 'No se pudo cargar la FIEL para el RFC ' . $rfcAutenticacion . '. Por favor, autentíquese primero.'], 401);
 }
 
+// 5. Verificar si ya existe una solicitud similar para evitar duplicados
+$db = (new Database())->getConnection();
+$checkStmt = $db->prepare(
+    'SELECT id_solicitud, estado FROM cf_solicitudes WHERE fecha_ini = ? AND fecha_fin = ? AND tipo = ? AND (rfc_emisor = ? OR rfc_receptor = ?)'
+);
+$checkStmt->execute([
+    $inicio->format('Y-m-d'),
+    $fin->format('Y-m-d'),
+    $tipoSolicitudBD,
+    $rfcSolicitante,
+    $rfcSolicitante
+]);
+$existingRequest = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+if ($existingRequest && in_array($existingRequest['estado'], ['aceptada', 'en_proceso', 'terminada'], true)) {
+    respond([
+        'success' => false,
+        'message' => 'Ya existe una solicitud para este período y tipo de descarga. Por favor, verifique sus solicitudes existentes.'
+    ], 409); // 409 Conflict
+}
+
+
 try {
     $service = createService($fiel);
 
@@ -134,9 +159,7 @@ try {
     $period = new DateTimePeriod($start, $end);
 
     $downloadType = ($tipoDescarga === 'recibidos') ? DownloadType::received() : DownloadType::issued();
-
     $requestType = RequestType::xml();
-
     $serviceType = ServiceType::cfdi();
 
     $queryParams = QueryParameters::create(
@@ -150,19 +173,40 @@ try {
     $status = $queryResult->getStatus();
 
     if (!$status->isAccepted()) {
-        throw new \Exception("La solicitud fue rechazada por el SAT: [{$status->getCode()}] {$status->getMessage()}");
-    }
+        $message = "La solicitud fue rechazada por el SAT: [{$status->getCode()}] {$status->getMessage()}";
+        $code = 400; // Bad Request
 
-    $db = (new Database())->getConnection();
+        switch ($status->getCode()) {
+            case 300:
+                $message = "Usuario No Válido: {$status->getMessage()}";
+                $code = 401; // Unauthorized
+                break;
+            case 301:
+                $message = "XML Mal Formado: {$status->getMessage()}";
+                break;
+            case 304:
+            case 305:
+                $message = "Certificado Inválido, Revocado o Caduco: {$status->getMessage()}";
+                $code = 401; // Unauthorized
+                break;
+            case 5002:
+                $message = "Se han agotado las solicitudes de por vida para este criterio: {$status->getMessage()}";
+                $code = 429; // Too Many Requests
+                break;
+            case 5005:
+                $message = "Ya existe una solicitud registrada con los mismos criterios: {$status->getMessage()}";
+                $code = 409; // Conflict
+                break;
+        }
+        respond(['success' => false, 'message' => $message], $code);
+    }
+    
     $stmt = $db->prepare(
         'INSERT INTO cf_solicitudes (
-        solicitud_id_sat, fecha_creacion, fecha_terminada, ultima_verificacion,
-        estado, tipo, folio, fecha_ini, fecha_fin, total_paquetes, total_cfdis,
-        mensaje_error, rfc_emisor, rfc_receptor, token
+        solicitud_id_sat, fecha_creacion, estado, tipo, folio, fecha_ini, fecha_fin, 
+        rfc_emisor, rfc_receptor, token
     ) VALUES (
-        ?, NOW(), NULL, NULL,
-        ?, ?, ?, ?, ?, 0, 0,
-        NULL, ?, ?, ?
+        ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?
     )'
     );
 
@@ -180,7 +224,6 @@ try {
         $token                        
     ]);
 
-
     $idSolicitud = $db->lastInsertId();
 
     respond([
@@ -193,6 +236,7 @@ try {
             'message' => $status->getMessage()
         ]
     ]);
+
 } catch (\Throwable $e) {
     error_log("Error en solicitar-descarga.php: " . $e->getMessage());
     respond(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()], 500);
