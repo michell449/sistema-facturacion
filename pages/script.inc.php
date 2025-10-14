@@ -42,7 +42,6 @@
 
 <?php if (basename($_SERVER['REQUEST_URI'], '.php') === 'cargar-facturas' || (isset($_GET['pg']) && $_GET['pg'] === 'cargar-facturas')): ?>
   <script>
-    // IDs: xmlFile, zipFile, cfdiModal (modal), cfdiReviewBody, cfdiParseErrors
     const xmlInput = document.getElementById('xmlFile');
     const zipInput = document.getElementById('zipFile');
     const cfdiModalEl = document.getElementById('cfdiModal');
@@ -91,7 +90,7 @@
         cfdiReviewBody.innerHTML = '';
         cfdiParseErrors.innerText = '';
 
-        // poblar filas
+        // llenar filas
         data.parsed.forEach((item, idx) => {
           const tr = document.createElement('tr');
           const chk = document.createElement('input');
@@ -140,7 +139,6 @@
       });
     }
 
-    // También agregar evento al botón de carga ZIP
     const btnUploadZip = document.querySelector('form#form-manual button[data-bs-target="#cfdiModal"]');
     if (btnUploadZip) {
       btnUploadZip.addEventListener('click', (e) => {
@@ -221,15 +219,13 @@
       const viewFilesModal = document.getElementById('viewFilesModal');
       if (viewFilesModal) {
         viewFilesModal.addEventListener('show.bs.modal', function(event) {
-          // Elemento que activó el modal (la fila de la tabla)
           const row = event.relatedTarget;
 
-          // Extraer información de los atributos data-*
+          // Extraer información de los atributos data
           const pdfPath = row.getAttribute('data-pdf-path');
           const xmlPath = row.getAttribute('data-xml-path');
           const uuid = row.getAttribute('data-uuid');
 
-          // Actualizar el título del modal
           const modalTitle = viewFilesModal.querySelector('.modal-title');
           modalTitle.textContent = 'Archivos de Factura: ' + uuid;
 
@@ -266,7 +262,6 @@
           }
         });
 
-        // Limpiar el iframe al cerrar el modal para detener la carga
         viewFilesModal.addEventListener('hidden.bs.modal', function() {
           const pdfViewer = document.getElementById('pdf-viewer');
           pdfViewer.src = 'about:blank';
@@ -450,263 +445,121 @@
 
 <?php if (basename($_SERVER['REQUEST_URI'], '.php') === 'ver-peticiones' || (isset($_GET['pg']) && $_GET['pg'] === 'ver-peticiones')): ?>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('🔧 Inicializando sistema de verificación v2.0...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Inicializando sistema de peticiones v3.1 (Unificado)...');
 
-      const btnVerificarTodas = document.getElementById('btn-verificar'); 
+    // Usamos el cuerpo de la tabla para delegar los eventos
+    const tablaPeticionesBody = document.querySelector('#tbody-solicitudes');
 
-      if (!btnVerificarTodas) {
-        console.error('❌ No se encontró el botón con id="btn-verificar"');
+    if (!tablaPeticionesBody) {
+        console.error('❌ No se encontró el cuerpo de la tabla (tbody) con id="peticiones-tbody". Los botones no funcionarán.');
         return;
-      }
+    }
 
-      console.log('✅ Botón principal encontrado, agregando funcionalidad...');
+    // Un único manejador de eventos para todos los clics en la tabla
+    tablaPeticionesBody.addEventListener('click', async function(event) { // 'event' se define aquí, solucionando el error "e is not defined"
+        
+        const botonClickeado = event.target.closest('a.btn, button.btn');
 
-      // Función para mostrar los badges de estado
-      function parseEstadoBadge(estado) {
-        const map = {
-          'pendiente': '<span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Pendiente</span>',
-          'aceptada': '<span class="badge bg-info"><i class="fas fa-hourglass-half me-1"></i>Aceptada</span>',
-          'terminada': '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Terminada</span>',
-          'rechazada': '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Rechazada</span>',
-          'error': '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i>Error</span>',
-          'vencida': '<span class="badge bg-warning"><i class="fas fa-hourglass-end me-1"></i>Vencida</span>'
-        };
-        return map[estado] || `<span class="badge bg-dark">${estado}</span>`;
-      }
-
-      async function verificarConSAT(idSolicitud = null) {
-        const payload = {};
-        if (idSolicitud) {
-          payload.id_solicitud = parseInt(idSolicitud, 10);
-          console.log(`🔄 Verificando estado para solicitud individual: ${idSolicitud}`);
-        } else {
-          console.log('🔄 Verificando estado para TODAS las solicitudes pendientes...');
+        if (!botonClickeado || !botonClickeado.dataset.id) {
+            return; // No se hizo clic en un botón de acción con data-id
         }
+        
+        event.preventDefault(); // Prevenir la acción por defecto del botón
+        const idSolicitud = botonClickeado.dataset.id;
 
-        try {
-          const response = await fetch('core/actualizar-estado-solicitud.php', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
+        // --- Lógica para VERIFICAR ---
+        if (botonClickeado.classList.contains('btn-verificar-individual')) {
+            botonClickeado.disabled = true;
+            botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            try {
+                const response = await fetch('core/actualizar-estado-solicitud.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_solicitud: idSolicitud, descargar_paquetes: true }) // Siempre intenta descargar al verificar
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Error en el servidor');
+                
+                Swal.fire('¡Éxito!', result.message || 'Estado de la solicitud verificado.', 'success').then(() => location.reload());
 
-          if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
-          }
-
-          const data = await response.json();
-          console.log('📊 Respuesta del servidor:', data);
-          return data;
-
-        } catch (error) {
-          console.error('❌ Error en la llamada de verificación:', error);
-          return {
-            success: false,
-            message: error.message
-          };
-        }
-      }
-
-      // Función para actualizar una fila específica en la tabla
-      function actualizarFilaTabla(idSolicitud, nuevoEstado) {
-        const fila = document.querySelector(`tr[data-id="${idSolicitud}"]`);
-        if (!fila) {
-          console.warn('⚠️ No se encontró la fila para la solicitud:', idSolicitud);
-          return;
-        }
-
-        // Actualizar columna de estado
-        const estadoCol = fila.querySelector('.estado-col');
-        if (estadoCol) {
-          estadoCol.innerHTML = parseEstadoBadge(nuevoEstado);
-        }
-
-        const ultVerifCell = fila.cells[8];
-        if (ultVerifCell) {
-          ultVerifCell.textContent = new Date().toLocaleString();
-        }
-
-        console.log(`✅ Fila actualizada para la solicitud: ${idSolicitud}`);
-      }
-
-      btnVerificarTodas.addEventListener('click', async function() {
-        console.log(' Iniciando verificación de todas las solicitudes...');
-
-        const btnOriginalHTML = this.innerHTML;
-        this.disabled = true;
-        this.innerHTML = '<i class="fas fa-sync-alt fa-spin me-1"></i> Verificando...';
-
-        const resultado = await verificarConSAT(); // No se pasa ID para verificar todas
-
-        this.disabled = false;
-        this.innerHTML = btnOriginalHTML;
-
-        if (resultado.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Verificación Completada',
-            text: resultado.message,
-          });
-
-          if (resultado.nuevos_estados) {
-            for (const id in resultado.nuevos_estados) {
-              actualizarFilaTabla(id, resultado.nuevos_estados[id]);
+            } catch (error) {
+                Swal.fire('Error', 'No se pudo verificar el estado: ' + error.message, 'error');
+                botonClickeado.disabled = false;
+                botonClickeado.innerHTML = '<i class="fas fa-sync-alt"></i>';
             }
-          }
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error en la Verificación',
-            text: resultado.message || 'Ocurrió un error desconocido.',
-          });
         }
-      });
 
+        // --- Lógica para DESCARGAR ---
+        if (botonClickeado.classList.contains('btn-descargar-paquetes')) {
+            botonClickeado.disabled = true;
+            botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-      document.addEventListener('click', async function(e) {
-        const btnIndividual = e.target.closest('.btn-verificar-individual'); // Usar una clase específica
-        if (!btnIndividual) {
-          return;
-        }
-        e.preventDefault();
-
-        const idSolicitud = btnIndividual.getAttribute('data-id');
-        const fila = btnIndividual.closest('tr');
-        const estadoCol = fila ? fila.querySelector('.estado-col') : null;
-        const estadoOriginalHTML = estadoCol ? estadoCol.innerHTML : '';
-
-        console.log(`🔍 Iniciando verificación individual para: ${idSolicitud}`);
-
-        // Mostrar estado de carga
-        if (estadoCol) {
-          estadoCol.innerHTML = '<span class="badge bg-warning"><i class="fas fa-sync fa-spin me-1"></i>Verificando...</span>';
-        }
-        btnIndividual.disabled = true;
-
-        const resultado = await verificarConSAT(idSolicitud);
-
-        btnIndividual.disabled = false;
-
-        if (resultado.success && resultado.nuevos_estados && resultado.nuevos_estados[idSolicitud]) {
-          const nuevoEstado = resultado.nuevos_estados[idSolicitud];
-          actualizarFilaTabla(idSolicitud, nuevoEstado);
-          Swal.fire({
-            icon: 'success',
-            title: 'Verificación Exitosa',
-            text: `El estado de la solicitud #${idSolicitud} es ahora: ${nuevoEstado}`,
-            timer: 2500,
-            showConfirmButton: false
-          });
-        } else {
-          if (estadoCol) {
-            estadoCol.innerHTML = estadoOriginalHTML; // Restaurar en caso de error
-          }
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: resultado.message || `No se pudo verificar la solicitud #${idSolicitud}.`,
-          });
-        }
-      });
-      // ---- MANEJO DEL BOTÓN DE DESCARGA DE PAQUETES ----
-      const btnDescargar = e.target.closest('.btn-descargar-paquetes');
-      if (btnDescargar) {
-        (async function() {
-          const fila = btnDescargar.closest('tr');
-          const idSolicitud = fila.getAttribute('data-id');
-
-          btnDescargar.disabled = true;
-          const orig = btnDescargar.innerHTML;
-          btnDescargar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
-
-          try {
-            // Puedes elegir uno de los métodos según tu lógica, aquí se usa el primero (con descargar_paquetes flag)
-            const resp = await fetch('core/actualizar-estado-solicitud.php', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                id_solicitud: parseInt(idSolicitud, 10),
-                descargar_paquetes: true
-              }) // Añadimos un flag para forzar la descarga
+            Swal.fire({
+                title: 'Descargando Paquetes',
+                text: 'Conectando con el SAT, esto puede tardar un momento...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
             });
-            const data = await resp.json();
 
-            if (data.success) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Descarga completada',
-                text: data.message,
-                timer: 2000,
-                showConfirmButton: false
-              }).then(() => location.reload());
-            } else {
-              Swal.fire('Error', data.message || 'No se pudo descargar paquetes', 'error');
+            try {
+                const response = await fetch('core/actualizar-estado-solicitud.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_solicitud: idSolicitud, descargar_paquetes: true })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Error en el servidor');
+
+                Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+
+            } catch (error) {
+                Swal.fire('Error', 'No se pudieron descargar los paquetes: ' + error.message, 'error');
+                botonClickeado.disabled = false;
+                botonClickeado.innerHTML = '<i class="fas fa-download"></i>';
             }
-          } catch (err) {
-            Swal.fire('Error', 'Error de conexión al servidor', 'error');
-          } finally {
-            btnDescargar.disabled = false;
-            btnDescargar.innerHTML = orig;
-          }
-        })();
-      }
-
-      document.addEventListener('click', async function(e) {
-        // ---- PROCESAR PAQUETES ----
-        const btnProcesar = e.target.closest('.btn-procesar-paquetes');
-        if (btnProcesar) {
-          const idSolicitud = btnProcesar.getAttribute('data-id');
-          btnProcesar.disabled = true;
-          const origHtml = btnProcesar.innerHTML;
-          btnProcesar.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-          Swal.fire({
-            title: 'Procesando Facturas',
-            text: 'Extrayendo, guardando y generando PDFs. Esto puede tardar unos momentos...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-          });
-
-          try {
-            const response = await fetch('core/procesar-paquetes.php', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                id_solicitud: idSolicitud
-              })
-            });
-            const result = await response.json();
-
-            if (result.success) {
-              Swal.fire({
-                icon: 'success',
-                title: '¡Proceso Exitoso!',
-                text: result.message,
-              }).then(() => {
-                window.location.href = 'panel?pg=cargar-facturas';
-              });
-            } else {
-              throw new Error(result.message);
-            }
-          } catch (error) {
-            Swal.fire('Error', error.message, 'error');
-          } finally {
-            btnProcesar.disabled = false;
-            btnProcesar.innerHTML = origHtml;
-          }
         }
-      });
 
+        // --- Lógica para PROCESAR ---
+        if (botonClickeado.classList.contains('btn-procesar-paquetes')) {
+            botonClickeado.disabled = true;
+            botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            Swal.fire({
+                title: 'Procesando Facturas',
+                text: 'Extrayendo, guardando y generando PDFs. Por favor, espere...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const response = await fetch('core/procesar_paquetes.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id_solicitud: idSolicitud })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.message || 'Error desconocido durante el procesamiento.');
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Proceso Completado!',
+                    text: result.message,
+                }).then(() => {
+                    window.location.href = 'panel?pg=cargar-facturas'; // Redirigir a facturas
+                });
+
+            } catch (error) {
+                Swal.fire('Error', 'No se pudieron procesar los paquetes: ' + error.message, 'error');
+                botonClickeado.disabled = false;
+                botonClickeado.innerHTML = '<i class="fas fa-cogs"></i>';
+            }
+        }
     });
 
-    console.log('✅ Sistema de verificación y procesamiento v2.2 inicializado correctamente.');
+    console.log('✅ Sistema de peticiones v3.1 listo y unificado.');
+});
   </script>
 <?php endif; ?>
 

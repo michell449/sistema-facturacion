@@ -1,14 +1,10 @@
+
 <li class="nav-item dropdown user-menu">
-    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-        <span class="d-none d-md-inline"><?php echo $_SESSION['USR_NAME'];?></span>
-    </a>
+    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><span class="d-none d-md-inline"><?php echo$_SESSION['USR_NAME'];?></span></a>
     <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-end">
         <!--begin::User Image-->
         <li class="user-header text-bg-primary">
-            <p>
-                Alexander Pierce - Web Developer
-                <small>Member since Nov. 2023</small>
-            </p>
+            <p>Alexander Pierce - Web Developer<small>Member since Nov. 2023</small></p>
         </li>
         <!--end::User Image-->
         <!--begin::Menu Body-->

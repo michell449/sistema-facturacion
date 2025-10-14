@@ -8,6 +8,7 @@ use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBui
 use PhpCfdi\SatWsDescargaMasiva\Service;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use GuzzleHttp\Client;
+use PhpCfdi\SatWsDescargaMasiva\Services\Download\DownloadResult;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -24,6 +25,7 @@ function ensureFiel(): Fiel
     if (!isset($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSION['fiel_passphrase'])) {
         respond(['success' => false, 'message' => 'Sesión no autenticada con FIEL'], 401);
     }
+
     try {
         $fiel = Fiel::create($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSION['fiel_passphrase']);
         if (!$fiel->isValid()) {
@@ -35,17 +37,14 @@ function ensureFiel(): Fiel
     }
 }
 
-function createService(Fiel $fiel): Service {
+function createService(Fiel $fiel): Service
+{
     $client = new Client(['timeout' => 90]);
     $webClient = new GuzzleWebClient($client);
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
 $input = json_decode(file_get_contents('php://input'), true);
-if (!is_array($input)) {
-    respond(['success' => false, 'message' => 'JSON inválido'], 400);
-}
-
 $idLocal = (int)($input['id_solicitud'] ?? 0);
 if ($idLocal <= 0) {
     respond(['success' => false, 'message' => 'ID de solicitud inválido'], 400);
@@ -79,21 +78,37 @@ foreach ($paquetes as $p) {
         $nuevosPaquetes[] = $p;
         continue;
     }
+
     $pid = $p['package_id'] ?? '';
     if (!$pid) {
+        $p['estado'] = 'error';
+        $p['mensaje_error'] = 'package_id vacío';
         $nuevosPaquetes[] = $p;
         continue;
     }
+
     try {
-        $zipContents = $service->download($pid);
+        $downloadResult = $service->download($pid);
+        $zipContents = $downloadResult->getPackageContent();
+
+        if (empty($zipContents)) {
+            throw new \Exception("El contenido del paquete está vacío.");
+        }
+
+        if (strpos($zipContents, 'PK') !== 0) {
+            $debugFile = $baseTmp . "/{$pid}_INVALID.txt";
+            file_put_contents($debugFile, $zipContents);
+            throw new \Exception("El contenido no parece un archivo ZIP válido. Guardado en: {$debugFile}");
+        }
 
         $pathDir = $baseTmp . '/' . $rfc . '/' . $idLocal;
         @mkdir($pathDir, 0775, true);
 
         $filename = $pathDir . '/' . $pid . '.zip';
         $bytes = file_put_contents($filename, $zipContents);
-        if ($bytes === false) {
-            throw new \Exception("No se pudo escribir ZIP: $filename");
+
+        if ($bytes === false || $bytes === 0) {
+            throw new \Exception("No se pudo guardar correctamente el archivo ZIP.");
         }
 
         $relPath = "uploads/tmp/{$rfc}/{$idLocal}/{$pid}.zip";
@@ -106,6 +121,7 @@ foreach ($paquetes as $p) {
         $p['estado'] = 'error';
         $p['mensaje_error'] = $e->getMessage();
     }
+
     $nuevosPaquetes[] = $p;
 }
 
