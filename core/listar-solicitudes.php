@@ -10,7 +10,7 @@ function ls_html_escape(string $v): string
 
 try {
     $db = (new Database())->getConnection();
-    
+
     // ... (Tu código de filtros y consulta SQL se mantiene igual aquí arriba)
     $fRfc    = $_GET['rfc'] ?? '';
     $fTipo   = $_GET['tipo'] ?? '';
@@ -21,16 +21,27 @@ try {
     $params = [];
 
     // Lógica de filtrado (simplificada para el ejemplo)
-    if ($fRfc !== '') { $where[] = "(rfc_emisor LIKE ? OR rfc_receptor LIKE ?)"; $params[] = "%$fRfc%"; $params[] = "%$fRfc%"; }
-    if ($fTipo !== '') { $where[] = "tipo = ?"; $params[] = $fTipo; }
-    if ($fEstado !== '') { $where[] = "estado = ?"; $params[] = $fEstado; }
+    if ($fRfc !== '') {
+        $where[] = "(rfc_emisor LIKE ? OR rfc_receptor LIKE ?)";
+        $params[] = "%$fRfc%";
+        $params[] = "%$fRfc%";
+    }
+    if ($fTipo !== '') {
+        $where[] = "tipo = ?";
+        $params[] = $fTipo;
+    }
+    if ($fEstado !== '') {
+        $where[] = "estado = ?";
+        $params[] = $fEstado;
+    }
 
     $sql = "SELECT * FROM cf_solicitudes";
     if (!empty($where)) {
         $sql .= " WHERE " . implode(' AND ', $where);
     }
+    // Se mantiene el orden por ID descendente para mostrar las más recientes primero
     $sql .= " ORDER BY id_solicitud DESC LIMIT 100";
-    
+
     $st = $db->prepare($sql);
     $st->execute($params);
     $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -40,6 +51,9 @@ try {
         echo '<tr><td colspan="10" class="text-muted">Sin resultados</td></tr>';
         return;
     }
+
+    // Inicializar el contador para la numeración visual de la lista
+    $displayId = 1;
 
     foreach ($rows as $r) {
         $paquetesDesc = 0;
@@ -78,7 +92,8 @@ try {
         $rango = ls_html_escape(($r['fecha_ini'] ?? '') . ' → ' . ($r['fecha_fin'] ?? ''));
 
         echo '<tr data-id="' . (int)$r['id_solicitud'] . '">';
-        echo '<td>' . (int)$r['id_solicitud'] . '</td>';
+        // MODIFICACIÓN: Mostrar un ID secuencial para la lista (1, 2, 3...)
+        echo '<td>' . $displayId++ . '</td>';
         echo '<td class="text-break" style="max-width:180px"><small>' . ls_html_escape($r['solicitud_id_sat']) . '</small></td>';
         $rfcMostrar = $r['rfc_emisor'] ?: ($r['rfc_receptor'] ?: ($r['rfc'] ?? ''));
         echo '<td>' . ls_html_escape($rfcMostrar) . '</td>';
@@ -88,7 +103,7 @@ try {
         echo '<td class="estado-col"><span class="badge bg-' . $eCls . '">' . $eTxt . '</span></td>';
         echo '<td><small>' . ls_html_escape($r['fecha_creacion'] ?? '') . '</small></td>';
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
-        
+
         // --- COLUMNA DE ACCIONES ---
         echo '<td>';
         echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
@@ -97,8 +112,11 @@ try {
             echo ' <button class="btn btn-success btn-sm btn-procesar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Procesar Paquetes"><i class="fas fa-cogs"></i></button>';
         } elseif ($r['estado'] === 'terminada') {
             echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Descargar Paquetes"><i class="fas fa-download"></i></button>';
+        } elseif ($r['estado'] === 'rechazada') {
+            // ADICIÓN: Botón para eliminar la solicitud rechazada
+            echo ' <button class="btn btn-danger btn-sm btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Rechazada"><i class="fas fa-trash-alt"></i></button>';
         }
-        
+
         if (!empty($paqs)) {
             echo '<div class="btn-group mt-1" role="group">';
             foreach ($paqs as $p) {
@@ -110,7 +128,7 @@ try {
             echo '</div>';
         }
         echo '</td>';
-        
+
         echo '</tr>';
     }
 } catch (Throwable $e) {

@@ -46,4 +46,63 @@
         </div>
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<script>
+    // Usando jQuery
+    $(document).ready(function() {
+        // Función para reordenar los IDs visuales (primera columna)
+        function updateDisplayIds() {
+            $('#tbody-solicitudes tr').each(function(index) {
+                // El índice es base 0, por lo que el ID a mostrar es index + 1
+                $(this).find('td:first').text(index + 1);
+            });
+        }
+        
+        // Delegación de eventos para el botón de eliminar por su clase CSS
+        $('#tbody-solicitudes').on('click', '.btn-eliminar-solicitud', function(e) {
+            e.preventDefault();
+            const idSolicitud = $(this).data('id');
+            const row = $(this).closest('tr');
+            
+            if (confirm('¿Estás seguro de que deseas eliminar la solicitud Rechazada con ID ' + idSolicitud + '? Esta acción es irreversible y eliminará los archivos de paquete asociados.')) {
+                $.ajax({
+                    url: 'core/eliminar-solicitud.php', // El nuevo script de backend
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { id: idSolicitud },
+                    beforeSend: function() {
+                        // Deshabilitar botones mientras se procesa la solicitud
+                        row.find('button, a').prop('disabled', true).addClass('disabled');
+                        row.css('opacity', 0.5);
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Éxito: ' + response.message);
+                            
+                            // Eliminar la fila de la tabla
+                            row.remove();
+                            
+                            // Reordenar los IDs visuales después de la eliminación
+                            updateDisplayIds();
+
+                        } else {
+                            alert('Error al eliminar: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error de comunicación con el servidor. Por favor, revisa la consola (F12) para más detalles.');
+                        console.error('Error AJAX:', status, error, xhr.responseText);
+                    },
+                    complete: function() {
+                        // Si la fila no fue eliminada (ej. error), re-habilitar
+                        if (row.length && row.parent().length) { 
+                            row.find('button, a').prop('disabled', false).removeClass('disabled');
+                            row.css('opacity', 1);
+                        }
+                    }
+                });
+            }
+        });
+    });
+</script>
