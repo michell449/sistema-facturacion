@@ -69,12 +69,10 @@ foreach ($items as $it) {
     $q = $conn->query("SELECT uuid FROM facturas WHERE uuid = '$uuid' LIMIT 1");
     if ($q && $q->num_rows > 0) {
         $errors[] = ['uuid' => $uuid, 'error' => 'UUID ya existe en la base'];
-        // eliminar tmp para no acumular (opcional)
         @unlink($uploadTmpDir . $it['_tmp_file']);
         continue;
     }
 
-    // mover archivo temporal a xml final
     $tmpname = $uploadTmpDir . $it['_tmp_file'];
     $finalXmlName = $uuid . '.xml';
     $dest = $uploadXmlDir . $finalXmlName;
@@ -92,8 +90,7 @@ foreach ($items as $it) {
         @unlink($dest);
         continue;
     }
-
-    // bind params 
+ 
     $version = $it['version'] ?? '';
     $fecha = $it['fecha'] ?? null;
     $subtotal = $it['subtotal'] ?? 0.00;

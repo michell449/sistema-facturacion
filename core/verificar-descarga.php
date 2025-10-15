@@ -96,7 +96,6 @@ if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
 
     exit("Verificación completada ($estadoSAT) para solicitud $idLocal\n");
 }
-// --- FIN DE LA SECCIÓN DE EJECUCIÓN EN SEGUNDO PLANO ---
 
 
 function respond($data, $code = 200)
@@ -112,11 +111,10 @@ function respond($data, $code = 200)
  */
 function getFielFromSource(string $rfc): ?Fiel
 {
-    // La ruta a estos archivos podría estar en tu archivo de configuración.
     $rutaBaseFiel = __DIR__ . '/../fieles/'; //
     $cerPath = $rutaBaseFiel . $rfc . '.cer';
     $keyPath = $rutaBaseFiel . $rfc . '.key';
-    $passphrase = 'tu_contraseña'; // ¡Esto debería obtenerse de forma segura! No la escribas directamente en el código.
+    $passphrase = 'tu_contraseña';
 
     if (!file_exists($cerPath) || !file_exists($keyPath)) {
         return null; 
@@ -184,8 +182,6 @@ if ($idLocal <= 0 && $requestId === '') {
     respond(['success' => false, 'message' => 'Debe enviar id_solicitud o requestId'], 400);
 }
 
-// Llama a ensureFiel() aquí para asegurarse de que el usuario está autenticado
-// antes de iniciar el proceso en segundo plano.
 ensureFiel();
 
 respond([

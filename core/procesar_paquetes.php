@@ -15,7 +15,6 @@ use PhpCfdi\CfdiToPdf\CfdiDataBuilder;
 
 header('Content-Type: application/json; charset=utf-8');
 
-// --- Helper: parsear CFDI XML ---
 function parseCfdiXmlString(string $xmlString)
 {
     libxml_use_internal_errors(true);
@@ -56,7 +55,6 @@ function parseCfdiXmlString(string $xmlString)
     ];
 }
 
-// --- Helper: convertir XML a PDF ---
 function convertirXmlAPdf(string $contenidoXml, string $rutaPdfDestino): bool
 {
     try {
@@ -72,7 +70,6 @@ function convertirXmlAPdf(string $contenidoXml, string $rutaPdfDestino): bool
     }
 }
 
-// MAIN
 $input = json_decode(file_get_contents('php://input'), true);
 $idSolicitud = $input['id_solicitud'] ?? null;
 if (!$idSolicitud) {
@@ -123,8 +120,6 @@ try {
         }
 
         try {
-            // Intentar leer el paquete con la librería (puede lanzar OpenZipFileException)
-            // La librería acepta ruta de archivo
             $reader = CfdiPackageReader::createFromFile($zipfile);
             $cfdisIter = $reader->cfdis();
             $cfdis = iterator_to_array($cfdisIter);
@@ -142,7 +137,6 @@ try {
                     continue;
                 }
 
-                // Verificar duplicado (usando PDO)
                 $check = $db->prepare("SELECT uuid FROM facturas WHERE uuid = ? LIMIT 1");
                 $check->execute([$uuidStr]);
                 if ($check->fetch(PDO::FETCH_ASSOC)) {
@@ -221,7 +215,6 @@ try {
         }
     }
 
-    // Opcional: si todo se insertó correctamente, eliminar la solicitud (como en tu lógica)
     if ($insertedCount > 0 && empty($errors)) {
         $stmtDelete = $db->prepare("DELETE FROM cf_solicitudes WHERE id_solicitud = ?");
         $stmtDelete->execute([$idSolicitud]);

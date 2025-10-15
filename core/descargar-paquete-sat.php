@@ -8,11 +8,15 @@ use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
 use PhpCfdi\SatWsDescargaMasiva\Service;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\MetadataPackageReader;
+use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
 use GuzzleHttp\Client;
+use Throwable;
 
 function logActivity($message)
 {
-    $logFile = __DIR__ . '/logs/descargar-paquete-sat.log';
+    $logFile = __DIR__ . '/logs/sat_activity.log';
     $timestamp = date('Y-m-d H:i:s');
     file_put_contents($logFile, "[{$timestamp}] " . $message . "\n", FILE_APPEND);
 }
@@ -26,36 +30,70 @@ function respond($data, $code = 200)
     exit;
 }
 
-function ensureFiel(): Fiel
+function ensureFiel(string $rfc): Fiel
 {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    if (!isset($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSION['fiel_passphrase'])) {
-        logActivity("ERROR: Fiel no encontrada en la sesión.");
-        respond(['success' => false, 'message' => 'Sesión no autenticada con FIEL.'], 401);
+    
+    if (!isset($_SESSION['fiel_data'][$rfc])) {
+        throw new Exception("FIEL no cargada para el RFC $rfc.");
     }
-    try {
-        $fiel = Fiel::create($_SESSION['fiel_cer_content'], $_SESSION['fiel_key_content'], $_SESSION['fiel_passphrase']);
-        if (!$fiel->isValid()) {
-            logActivity("ERROR: La FIEL en sesión ha expirado o es inválida.");
-            respond(['success' => false, 'message' => 'La FIEL es inválida o ha expirado.'], 401);
-        }
-        return $fiel;
-    } catch (Throwable $e) {
-        logActivity("CRITICAL: No se pudo crear la FIEL desde la sesión. Error: " . $e->getMessage());
-        respond(['success' => false, 'message' => 'Error al cargar la FIEL: ' . $e->getMessage()], 500);
+    
+    $fielData = $_SESSION['fiel_data'][$rfc];
+    $fiel = Fiel::create($fielData['cer_content'], $fielData['key_content'], $fielData['passphrase']);
+    
+    if (!$fiel->isValid()) {
+        throw new Exception("La FIEL para $rfc es inválida o ha expirado.");
     }
+    
+    return $fiel;
 }
 
 function createService(Fiel $fiel): Service
 {
-    $client = new Client(['timeout' => 90, 'verify' => false]);
+    $client = new Client(['timeout' => 90]);
     $webClient = new GuzzleWebClient($client);
     return new Service(new FielRequestBuilder($fiel), $webClient);
 }
 
-logActivity("--- Inicio del proceso de descarga ---");
+function getNextPendingPackage(PDO $db, int $idSolicitud, string $rfc): ?array
+{
+    // Seleccionar el primer paquete pendiente
+    $stmt = $db->prepare('SELECT paquetes_json FROM cf_solicitudes WHERE id_solicitud = ?');
+    $stmt->execute([$idSolicitud]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        return null;
+    }
+
+    $paquetes = json_decode($row['paquetes_json'] ?? '[]', true);
+    if (!is_array($paquetes)) {
+        return null;
+    }
+
+    foreach ($paquetes as $index => &$paquete) {
+        if (($paquete['estado'] ?? '') === 'pendiente') {
+            return [
+                'index' => $index,
+                'data' => $paquete,
+                'all' => $paquetes
+            ];
+        }
+    }
+
+    return null;
+}
+
+function updatePackageStatus(PDO $db, int $idSolicitud, int $index, array $packageData, array $allPackages)
+{
+    $allPackages[$index] = $packageData;
+    $upd = $db->prepare('UPDATE cf_solicitudes SET paquetes_json = ?, ultima_verificacion = NOW() WHERE id_solicitud = ?');
+    $upd->execute([json_encode(array_values($allPackages), JSON_UNESCAPED_UNICODE), $idSolicitud]);
+}
+
+logActivity("--- Inicio del proceso de descarga (Único paquete) ---");
 
 $input = json_decode(file_get_contents('php://input'), true);
 $idLocal = (int)($input['id_solicitud'] ?? 0);
@@ -66,124 +104,108 @@ if ($idLocal <= 0) {
 }
 
 try {
-    $db = (new Database())->getConnection(); // PDO
-} catch (Throwable $e) {
-    logActivity("ERROR: No se pudo conectar a la base de datos: " . $e->getMessage());
-    respond(['success' => false, 'message' => 'Error de conexión a BD.'], 500);
-}
-
-$stmt = $db->prepare('SELECT solicitud_id_sat, paquetes_json, rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
-$stmt->execute([$idLocal]);
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$row) {
-    logActivity("ERROR: No se encontró la solicitud con ID {$idLocal}.");
-    respond(['success' => false, 'message' => 'Solicitud no encontrada.'], 404);
-}
-
-$paquetes = json_decode($row['paquetes_json'] ?? '[]', true);
-if (empty($paquetes)) {
-    logActivity("INFO: No hay paquetes para procesar en la solicitud {$idLocal}.");
-    respond(['success' => false, 'message' => 'No hay paquetes pendientes en esta solicitud.'], 400);
-}
-
-$fiel = ensureFiel();
-$service = createService($fiel);
-$rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
-$baseTmp = __DIR__ . '/../uploads/tmp';
-@mkdir($baseTmp, 0775, true);
-
-$nuevosPaquetes = [];
-$descargados = 0;
-
-foreach ($paquetes as $p) {
-    if (($p['estado'] ?? '') !== 'pendiente') {
-        $nuevosPaquetes[] = $p;
-        continue;
+    $db = (new Database())->getConnection(); 
+    
+    // Obtener información de la solicitud para el RFC
+    $stmt = $db->prepare('SELECT rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
+    $stmt->execute([$idLocal]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        throw new Exception('Solicitud no encontrada.');
     }
-    $pid = $p['package_id'] ?? '';
-    if (!$pid) {
-        $p['estado'] = 'error';
-        $p['mensaje_error'] = 'El ID del paquete está vacío.';
-        $nuevosPaquetes[] = $p;
-        continue;
+    $rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
+    if (empty($rfc)) {
+        throw new Exception('RFC no encontrado en la solicitud.');
     }
 
-    logActivity("Intentando descargar paquete {$pid}...");
+    $paquetePendiente = getNextPendingPackage($db, $idLocal, $rfc);
+    if (!$paquetePendiente) {
+        logActivity("INFO: No hay paquetes pendientes para descargar en la solicitud {$idLocal}.");
+        respond(['success' => true, 'message' => 'No hay paquetes pendientes para descargar.', 'descargados' => 0]);
+    }
 
+    $pid = $paquetePendiente['data']['package_id'];
+    $paqueteData = $paquetePendiente['data'];
+    $paquetes = $paquetePendiente['all'];
+    $paqueteIndex = $paquetePendiente['index'];
+    
+    $fiel = ensureFiel($rfc);
+    $service = createService($fiel);
+
+    logActivity("Intentando descargar paquete {$pid} de la solicitud {$idLocal}...");
+
+    // Directorio de almacenamiento
+    $baseTmp = __DIR__ . '/../uploads/tmp';
+    $pathDir = "{$baseTmp}/{$rfc}/{$idLocal}";
+    @mkdir($pathDir, 0775, true);
+    $zipFilePath = "{$pathDir}/{$pid}.zip";
+    $relPath = "uploads/tmp/{$rfc}/{$idLocal}/{$pid}.zip";
+
+    // 1. Descargar el paquete
+    $downloadResult = $service->download($pid);
+    
+    // 2. Verificar el estado de la descarga
+    if (! $downloadResult->getStatus()->isAccepted()) {
+        throw new Exception("El SAT rechazó la descarga: " . $downloadResult->getStatus()->getMessage());
+    }
+
+    // 3. Obtener el contenido 
+    $zipContents = $downloadResult->getPackageContent();
+    
+    // 4. Escribir el contenido en el archivo ZIP
+    $bytes = file_put_contents($zipFilePath, $zipContents);
+    if ($bytes === false) {
+        throw new Exception("No se pudo escribir el archivo ZIP: $zipFilePath");
+    }
+
+    // 5. Lectura y procesamiento del contenido
+    $isCfdiPackage = false;
     try {
-        $downloadResult = $service->download($pid);
-        $zipContents = $downloadResult->getPackageContent();
-
-        // Guardar respuesta cruda del SAT
-        $rawFile = $baseTmp . "/RAW_{$pid}.bin";
-        file_put_contents($rawFile, $zipContents);
-        logActivity("Guardada respuesta cruda del SAT en: {$rawFile} (" . strlen($zipContents) . " bytes)");
-
-        // Detectar tipo MIME real
-        $tmpMimeFile = tempnam(sys_get_temp_dir(), 'mime_');
-        file_put_contents($tmpMimeFile, $zipContents);
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $tmpMimeFile);
-        finfo_close($finfo);
-        unlink($tmpMimeFile);
-        logActivity("Tipo MIME detectado del paquete {$pid}: {$mime}");
-
-        // Registrar si parece XML o HTML
-        if (stripos($zipContents, '<?xml') === 0 || stripos($zipContents, '<html') !== false) {
-            logActivity("⚠️ El SAT devolvió texto (XML/HTML), no un ZIP válido para {$pid}. Guardado para análisis.");
-            $p['estado'] = 'error';
-            $p['mensaje_error'] = 'El SAT devolvió texto (XML/HTML), no un ZIP válido.';
-            $nuevosPaquetes[] = $p;
-            continue;
+        $cfdiReader = CfdiPackageReader::createFromFile($zipFilePath);
+        $isCfdiPackage = true;
+        $fileCount = 0;
+        
+        $cfdiDir = __DIR__ . '/../uploads/xml';
+        @mkdir($cfdiDir, 0775, true);
+        
+        foreach ($cfdiReader->cfdis() as $uuid => $content) {
+            // Guardar cada CFDI individualmente
+            file_put_contents("{$cfdiDir}/{$uuid}.xml", $content);
+            $fileCount++;
         }
-
-        // Intentar decodificar base64
-        $decoded = @base64_decode($zipContents, true);
-        if ($decoded !== false && strlen($decoded) > 100) {
-            logActivity("El contenido del SAT parece estar codificado en base64, decodificando...");
-            $zipContents = $decoded;
-        }
-
-        // Guardar ZIP final
-        $pathDir = "{$baseTmp}/{$rfc}/{$idLocal}";
-        @mkdir($pathDir, 0775, true);
-        $zipFilePath = "{$pathDir}/{$pid}.zip";
-        file_put_contents($zipFilePath, $zipContents);
-
-        // Validar ZIP
-        $zip = new ZipArchive();
-        if ($zip->open($zipFilePath) !== true) {
-            throw new Exception("El archivo descargado no es un ZIP válido. Ver RAW_{$pid}.bin");
-        }
-        $numFiles = $zip->numFiles;
-        $zip->close();
-
-        if ($numFiles === 0) {
-            throw new Exception("El ZIP está vacío.");
-        }
-
-        $p['estado'] = 'descargado';
-        $p['zip_path'] = str_replace(realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR, '', realpath($zipFilePath));
-        $nuevosPaquetes[] = $p;
-        $descargados++;
-
-        logActivity("✅ Paquete {$pid} descargado correctamente ({$numFiles} archivos).");
-    } catch (Throwable $e) {
-        $p['estado'] = 'error';
-        $p['mensaje_error'] = $e->getMessage();
-        logActivity("❌ ERROR en paquete {$pid}: " . $e->getMessage());
-        $nuevosPaquetes[] = $p;
+        $logMessage = "Paquete CFDI descargado y descomprimido ({$fileCount} archivos) en {$cfdiDir}.";
+        
+    } catch (OpenZipFileException $exception) {
+        logActivity("❌ Error al abrir ZIP: " . $exception->getMessage());
     }
+
+    //Actualizar el estado del paquete en la BD
+    $paqueteData['estado'] = 'descargado';
+    $paqueteData['zip_path'] = $relPath;
+    $paqueteData['fecha_descarga'] = date('Y-m-d H:i:s');
+    $paqueteData['procesado'] = ($isCfdiPackage) ? 1 : 0; // Marcar como procesado si es CFDI
+    updatePackageStatus($db, $idLocal, $paqueteIndex, $paqueteData, $paquetes);
+
+    logActivity("✅ Paquete {$pid} de la solicitud {$idLocal} procesado correctamente. " . $logMessage);
+    
+    respond([
+        'success' => true,
+        'message' => "Descarga y procesamiento del paquete {$pid} completado.",
+        'package_id' => $pid,
+        'estado_paquete' => 'descargado',
+        'zip_path' => $relPath
+    ]);
+    
+} catch (Throwable $e) {
+    // Manejar errores
+    $errorMessage = "Error en el proceso de descarga y procesamiento para la solicitud #$idLocal: " . $e->getMessage();
+    logActivity("❌ {$errorMessage}");
+
+    if (isset($paqueteData)) {
+        $paqueteData['estado'] = 'error';
+        $paqueteData['mensaje_error'] = $e->getMessage();
+        updatePackageStatus($db, $idLocal, $paqueteIndex, $paqueteData, $paquetes);
+    }
+
+    respond(['success' => false, 'message' => $errorMessage], 500);
 }
-
-$upd = $db->prepare('UPDATE cf_solicitudes SET paquetes_json = ?, ultima_verificacion = NOW() WHERE id_solicitud = ?');
-$upd->execute([json_encode($nuevosPaquetes, JSON_UNESCAPED_UNICODE), $idLocal]);
-
-logActivity("--- Fin del proceso. Descargados: {$descargados} ---");
-
-respond([
-    'success' => true,
-    'message' => "Descarga completada. Paquetes descargados: {$descargados}.",
-    'descargados' => $descargados,
-    'paquetes' => $nuevosPaquetes
-]);

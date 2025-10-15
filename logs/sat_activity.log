@@ -476,3 +476,6 @@
 [2025-10-15 20:01:47] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
 [2025-10-15 20:18:02] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
 [2025-10-15 20:27:03] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-15 21:40:54] FIEL autenticada y guardada en sesión - {"rfc":"ADX220314QI2"}
+[2025-10-15 23:30:43] Error autenticando FIEL - {"error":"Cannot open private key: error:1C800064:Provider routines::bad decrypt"}
+[2025-10-15 23:30:58] FIEL autenticada y guardada en sesión - {"rfc":"ASY120705C39"}
