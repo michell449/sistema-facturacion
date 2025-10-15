@@ -1,11 +1,11 @@
 <?php
 // core/procesar_paquetes.php
+declare(strict_types=1);
 
 require_once __DIR__ . "/../vendor/autoload.php";
-require_once __DIR__ . "/../config.php"; // Este archivo ya crea la variable global $conn
+require_once __DIR__ . "/../config.php";
 require_once __DIR__ . "/class/db.php";
 
-// Usamos las librerías que nos ayudarán en el proceso
 use PhpCfdi\SatWsDescargaMasiva\PackageReader\CfdiPackageReader;
 use PhpCfdi\SatWsDescargaMasiva\PackageReader\Exceptions\OpenZipFileException;
 use CfdiUtils\Nodes\XmlNodeUtils;
@@ -15,60 +15,55 @@ use PhpCfdi\CfdiToPdf\CfdiDataBuilder;
 
 header('Content-Type: application/json; charset=utf-8');
 
-function parseCfdiXmlString($xmlString)
+// --- Helper: parsear CFDI XML ---
+function parseCfdiXmlString(string $xmlString)
 {
     libxml_use_internal_errors(true);
     $xml = simplexml_load_string($xmlString);
     if (!$xml) {
         return false;
     }
-
     $getByLocal = function ($node, $local) {
-        $res = $node->xpath("//*[local-name()='$local']");
-        return ($res && count($res) > 0) ? $res[0] : null;
+        $res = $node->xpath("//*[local-name()='{$local}']");
+        return ($res && count($res)) ? $res[0] : null;
     };
-
     $comprobante = $getByLocal($xml, 'Comprobante') ?: $xml;
     $emisor = $getByLocal($xml, 'Emisor');
     $receptor = $getByLocal($xml, 'Receptor');
     $timbre = $getByLocal($xml, 'TimbreFiscalDigital');
-
     if (!$comprobante || !$emisor || !$receptor || !$timbre) {
         return false;
     }
-
-    $data = [];
-    $data['uuid'] = (string) $timbre['UUID'] ?: '';
-    $data['version'] = (string) $comprobante['Version'] ?: '';
-    $data['fecha'] = (string) $comprobante['Fecha'] ?: null;
-    $data['subtotal'] = (string) $comprobante['SubTotal'] ?: '0.00';
-    $data['total'] = (string) $comprobante['Total'] ?: '0.00';
-    $data['moneda'] = (string) $comprobante['Moneda'] ?: '';
-    $data['metodo_pago'] = (string) $comprobante['MetodoPago'] ?: '';
-    $data['forma_pago'] = (string) $comprobante['FormaPago'] ?: '';
-    $data['lugar_expedicion'] = (string) $comprobante['LugarExpedicion'] ?: '';
-    $data['no_certificado'] = (string) $comprobante['NoCertificado'] ?: '';
-    $data['tipo_comprobante'] = (string) $comprobante['TipoDeComprobante'] ?: '';
-    $data['serie'] = (string) $comprobante['Serie'] ?: '';
-    $data['folio'] = (string) $comprobante['Folio'] ?: '';
-    $data['emisor_rfc'] = (string) $emisor['Rfc'] ?: '';
-    $data['emisor_nombre'] = (string) $emisor['Nombre'] ?: '';
-    $data['receptor_rfc'] = (string) $receptor['Rfc'] ?: '';
-    $data['receptor_nombre'] = (string) $receptor['Nombre'] ?: '';
-    $data['receptor_uso_cfdi'] = (string) $receptor['UsoCFDI'] ?: '';
-
-    return $data;
+    return [
+        'uuid' => (string) $timbre['UUID'],
+        'version' => (string) $comprobante['Version'] ?? (string) $comprobante['Version'],
+        'fecha' => (string) $comprobante['Fecha'],
+        'subtotal' => (string) ($comprobante['SubTotal'] ?? ''),
+        'total' => (string) ($comprobante['Total'] ?? ''),
+        'moneda' => (string) ($comprobante['Moneda'] ?? ''),
+        'metodo_pago' => (string) ($comprobante['MetodoPago'] ?? ''),
+        'forma_pago' => (string) ($comprobante['FormaPago'] ?? ''),
+        'lugar_expedicion' => (string) ($comprobante['LugarExpedicion'] ?? ''),
+        'no_certificado' => (string) ($comprobante['NoCertificado'] ?? ''),
+        'tipo_comprobante' => (string) ($comprobante['TipoDeComprobante'] ?? $comprobante['TipoComprobante'] ?? ''),
+        'serie' => (string) ($comprobante['Serie'] ?? ''),
+        'folio' => (string) ($comprobante['Folio'] ?? ''),
+        'emisor_rfc' => (string) $emisor['Rfc'],
+        'emisor_nombre' => (string) $emisor['Nombre'],
+        'receptor_rfc' => (string) $receptor['Rfc'],
+        'receptor_nombre' => (string) $receptor['Nombre'],
+        'receptor_uso_cfdi' => (string) ($receptor['UsoCFDI'] ?? $receptor['UsoCFDI'])
+    ];
 }
 
-function convertirXmlAPdf($contenidoXml, $rutaPdfDestino)
+// --- Helper: convertir XML a PDF ---
+function convertirXmlAPdf(string $contenidoXml, string $rutaPdfDestino): bool
 {
     try {
         $builder = new Html2PdfBuilder();
         $converter = new Converter($builder);
         $comprobante = XmlNodeUtils::nodeFromXmlString($contenidoXml);
-        $cfdiDataBuilder = new CfdiDataBuilder();
-        $cfdiData = $cfdiDataBuilder->build($comprobante);
-
+        $cfdiData = (new CfdiDataBuilder())->build($comprobante);
         $converter->createPdfAs($cfdiData, $rutaPdfDestino);
         return true;
     } catch (Throwable $e) {
@@ -77,106 +72,119 @@ function convertirXmlAPdf($contenidoXml, $rutaPdfDestino)
     }
 }
 
-
+// MAIN
 $input = json_decode(file_get_contents('php://input'), true);
 $idSolicitud = $input['id_solicitud'] ?? null;
-
 if (!$idSolicitud) {
     echo json_encode(['success' => false, 'message' => 'ID de solicitud no proporcionado.']);
     exit;
 }
 
 try {
-    $db = (new Database())->getConnection();
+    $db = (new Database())->getConnection(); // asumo PDO
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Error de conexión a BD: ' . $e->getMessage()]);
+    exit;
+}
 
-    if (!isset($conn) || $conn->connect_error) {
-        throw new Exception("La conexión a la base de datos (MySQLi) falló: " . ($conn->connect_error ?? 'Error desconocido en config.php'));
-    }
-
-    // 1. Obtener los paquetes de la solicitud
+try {
     $stmt = $db->prepare("SELECT paquetes_json FROM cf_solicitudes WHERE id_solicitud = ? AND estado = 'terminada'");
     $stmt->execute([$idSolicitud]);
     $solicitud = $stmt->fetch(PDO::FETCH_ASSOC);
-
     if (!$solicitud || empty($solicitud['paquetes_json'])) {
-        throw new Exception("La solicitud no está terminada o no tiene paquetes para procesar.");
+        throw new Exception("La solicitud no está terminada o no contiene paquetes válidos.");
     }
-
     $paquetes = json_decode($solicitud['paquetes_json'], true);
-    if (!is_array($paquetes)) {
-        throw new Exception("El formato del listado de paquetes no es válido.");
+    if (!is_array($paquetes) || empty($paquetes)) {
+        throw new Exception("No hay paquetes para procesar.");
     }
 
     $uploadXmlDir = __DIR__ . "/../uploads/xml/";
     $uploadPdfDir = __DIR__ . "/../uploads/pdf/";
-    if (!is_dir($uploadXmlDir)) {
-        mkdir($uploadXmlDir, 0755, true);
-    }
-    if (!is_dir($uploadPdfDir)) {
-        mkdir($uploadPdfDir, 0755, true);
-    }
+    @mkdir($uploadXmlDir, 0755, true);
+    @mkdir($uploadPdfDir, 0755, true);
 
     $insertedCount = 0;
     $errors = [];
     $duplicatedCount = 0;
 
-    // 2. Procesar cada paquete (archivo ZIP)
     foreach ($paquetes as $paquete) {
         if (empty($paquete['zip_path'])) {
+            $errors[] = "Paquete sin ruta ZIP definida.";
             continue;
         }
-
         $projectRoot = dirname(__DIR__);
-        $zipfile = $projectRoot . DIRECTORY_SEPARATOR . ltrim($paquete['zip_path'], '/\\');
-    
-
-        if (!file_exists($zipfile)) {
-            $errors[] = "No se encontró el archivo ZIP: " . $paquete['zip_path'];
+        $relativeZipPath = ltrim($paquete['zip_path'], '/\\');
+        $zipfile = realpath($projectRoot . DIRECTORY_SEPARATOR . $relativeZipPath);
+        if (!$zipfile || !file_exists($zipfile)) {
+            $errors[] = "Archivo ZIP no encontrado: {$paquete['zip_path']}";
             continue;
         }
 
         try {
-            $cfdiReader = CfdiPackageReader::createFromFile($zipfile);
+            // Intentar leer el paquete con la librería (puede lanzar OpenZipFileException)
+            // La librería acepta ruta de archivo
+            $reader = CfdiPackageReader::createFromFile($zipfile);
+            $cfdisIter = $reader->cfdis();
+            $cfdis = iterator_to_array($cfdisIter);
 
-            // 3. Leer cada CFDI dentro del ZIP
-            foreach ($cfdiReader->cfdis() as $uuid => $content) {
-                // Evitar duplicados por UUID
-                $checkStmt = $db->prepare("SELECT uuid FROM facturas WHERE uuid = ?");
-                $checkStmt->execute([$uuid]);
-                if ($checkStmt->fetch()) {
+            if (count($cfdis) === 0) {
+                $errors[] = "El paquete {$paquete['zip_path']} no contiene CFDIs.";
+                continue;
+            }
+
+            foreach ($cfdis as $uuid => $content) {
+                // Normalizar UUID string
+                $uuidStr = (string)$uuid;
+                if (empty($uuidStr)) {
+                    $errors[] = "CFDI sin UUID detectado en paquete {$paquete['zip_path']}.";
+                    continue;
+                }
+
+                // Verificar duplicado (usando PDO)
+                $check = $db->prepare("SELECT uuid FROM facturas WHERE uuid = ? LIMIT 1");
+                $check->execute([$uuidStr]);
+                if ($check->fetch(PDO::FETCH_ASSOC)) {
                     $duplicatedCount++;
                     continue;
                 }
 
-                $finalXmlName = $uuid . '.xml';
-                $destXml = $uploadXmlDir . $finalXmlName;
+                // Guardar XML
+                $xmlFile = $uuidStr . '.xml';
+                $pdfFile = $uuidStr . '.pdf';
+                $xmlPath = $uploadXmlDir . $xmlFile;
+                $pdfPath = $uploadPdfDir . $pdfFile;
 
-                if (file_put_contents($destXml, $content) === false) {
-                    $errors[] = "No se pudo guardar el XML para el UUID: {$uuid}";
+                if (file_put_contents($xmlPath, $content) === false) {
+                    $errors[] = "No se pudo guardar XML del UUID: {$uuidStr}";
                     continue;
                 }
 
-                $finalPdfName = $uuid . '.pdf';
-                $destPdf = $uploadPdfDir . $finalPdfName;
-                if (!convertirXmlAPdf($content, $destPdf)) {
-                    $errors[] = "Error al convertir a PDF el UUID: {$uuid}";
-                    @unlink($destXml);
+                // Convertir a PDF
+                if (!convertirXmlAPdf($content, $pdfPath)) {
+                    $errors[] = "No se pudo generar PDF del UUID: {$uuidStr}";
+                    @unlink($xmlPath);
                     continue;
                 }
 
+                // Parsear XML para campos
                 $data = parseCfdiXmlString($content);
                 if (!$data) {
-                    $errors[] = "No se pudo parsear el XML del UUID: {$uuid}";
-                    @unlink($destXml);
-                    @unlink($destPdf);
+                    $errors[] = "No se pudo parsear XML del UUID: {$uuidStr}";
+                    @unlink($xmlPath);
+                    @unlink($pdfPath);
                     continue;
                 }
 
-                // Insertar en la base de datos usando la conexión $conn de config.php
-                $stmtInsert = $conn->prepare("INSERT INTO facturas (uuid, version, fecha, subtotal, total, moneda, metodo_pago, forma_pago, lugar_expedicion, no_certificado, tipo_comprobante, emisor_rfc, emisor_nombre, receptor_rfc, receptor_nombre, receptor_uso_cfdi, xml_file, pdf_file, serie, folio) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                $stmtInsert->bind_param(
-                    "ssssssssssssssssssss",
-                    $uuid,
+                // Insertar en BD (PDO) - ajustar campos según tu esquema real
+                $insert = $db->prepare(
+                    "INSERT INTO facturas 
+                    (uuid, version, fecha, subtotal, total, moneda, metodo_pago, forma_pago, lugar_expedicion, no_certificado, tipo_comprobante, emisor_rfc, emisor_nombre, receptor_rfc, receptor_nombre, receptor_uso_cfdi, xml_file, pdf_file, serie, folio)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                );
+                $insert->execute([
+                    $data['uuid'],
                     $data['version'],
                     $data['fecha'],
                     $data['subtotal'],
@@ -192,29 +200,28 @@ try {
                     $data['receptor_rfc'],
                     $data['receptor_nombre'],
                     $data['receptor_uso_cfdi'],
-                    $finalXmlName,
-                    $finalPdfName,
+                    $xmlFile,
+                    $pdfFile,
                     $data['serie'],
                     $data['folio']
-                );
+                ]);
 
-                if ($stmtInsert->execute()) {
+                if ($insert->rowCount() > 0) {
                     $insertedCount++;
                 } else {
-                    $errors[] = "Error al guardar en BD el UUID {$uuid}: " . $stmtInsert->error;
-                    @unlink($destXml);
-                    @unlink($destPdf);
+                    $errors[] = "Error al insertar UUID {$uuidStr}: no se insertó registro.";
+                    @unlink($xmlPath);
+                    @unlink($pdfPath);
                 }
-                $stmtInsert->close();
             }
         } catch (OpenZipFileException $e) {
-            $errors[] = "No se pudo abrir el archivo ZIP '{$paquete['zip_path']}': " . $e->getMessage();
+            $errors[] = "No se pudo abrir ZIP '{$paquete['zip_path']}': " . $e->getMessage();
         } catch (Throwable $e) {
-            $errors[] = "Error procesando el paquete '{$paquete['zip_path']}': " . $e->getMessage();
+            $errors[] = "Error procesando paquete '{$paquete['zip_path']}': " . $e->getMessage();
         }
     }
 
-    // 4. Si no hubo errores y se insertó al menos una factura, eliminar la solicitud
+    // Opcional: si todo se insertó correctamente, eliminar la solicitud (como en tu lógica)
     if ($insertedCount > 0 && empty($errors)) {
         $stmtDelete = $db->prepare("DELETE FROM cf_solicitudes WHERE id_solicitud = ?");
         $stmtDelete->execute([$idSolicitud]);
@@ -222,14 +229,14 @@ try {
 
     $message = "Proceso completado. Se registraron {$insertedCount} nuevas facturas.";
     if ($duplicatedCount > 0) {
-        $message .= " Se omitieron {$duplicatedCount} facturas que ya existían.";
+        $message .= " Se omitieron {$duplicatedCount} duplicados.";
     }
     if (!empty($errors)) {
-        $message .= " Se encontraron los siguientes errores: " . implode("; ", $errors);
+        $message .= " Errores: " . implode(" | ", $errors);
     }
 
     echo json_encode(['success' => true, 'message' => $message, 'inserted' => $insertedCount, 'errors' => $errors]);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Error Crítico: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error crítico: ' . $e->getMessage()]);
 }

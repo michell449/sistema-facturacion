@@ -203,6 +203,3 @@ console.log(data);
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-[{"package_id":"4C62D604-3C92-4F1F-9EC4-E4BDE193AB33_01","estado":"error","zip_path":null,"fecha_descarga":null,"mensaje_error":"No se pudo escribir el archivo ZIP: C:\\xampp\\htdocs\\app-m\\core\/..\/uploads\/tmp\/ASY120705C39\/13\/4C62D604-3C92-4F1F-9EC4-E4BDE193AB33_01.zip","procesado":0}]

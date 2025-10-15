@@ -67,23 +67,21 @@
             
             if (confirm('¿Estás seguro de que deseas eliminar la solicitud Rechazada con ID ' + idSolicitud + '? Esta acción es irreversible y eliminará los archivos de paquete asociados.')) {
                 $.ajax({
-                    url: 'core/eliminar-solicitud.php', // El nuevo script de backend
+                    url: 'core/eliminar-solicitud.php',
                     type: 'POST',
                     dataType: 'json',
                     data: { id: idSolicitud },
                     beforeSend: function() {
-                        // Deshabilitar botones mientras se procesa la solicitud
                         row.find('button, a').prop('disabled', true).addClass('disabled');
                         row.css('opacity', 0.5);
                     },
                     success: function(response) {
                         if (response.success) {
                             alert('Éxito: ' + response.message);
-                            
-                            // Eliminar la fila de la tabla
+
                             row.remove();
                             
-                            // Reordenar los IDs visuales después de la eliminación
+                            // Reordenar los IDs
                             updateDisplayIds();
 
                         } else {
@@ -95,7 +93,6 @@
                         console.error('Error AJAX:', status, error, xhr.responseText);
                     },
                     complete: function() {
-                        // Si la fila no fue eliminada (ej. error), re-habilitar
                         if (row.length && row.parent().length) { 
                             row.find('button, a').prop('disabled', false).removeClass('disabled');
                             row.css('opacity', 1);

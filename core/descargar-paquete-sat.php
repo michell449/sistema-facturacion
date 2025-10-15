@@ -1,4 +1,5 @@
 <?php
+// core/descargar-paquete-sat.php
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/class/db.php';
@@ -9,10 +10,9 @@ use PhpCfdi\SatWsDescargaMasiva\Service;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use GuzzleHttp\Client;
 
-// --- Logger simple ---
 function logActivity($message)
 {
-    $logFile = __DIR__ . '/../logs/descargar_paquete_sat.log';
+    $logFile = __DIR__ . '/logs/descargar-paquete-sat.log';
     $timestamp = date('Y-m-d H:i:s');
     file_put_contents($logFile, "[{$timestamp}] " . $message . "\n", FILE_APPEND);
 }
@@ -59,31 +59,35 @@ logActivity("--- Inicio del proceso de descarga ---");
 
 $input = json_decode(file_get_contents('php://input'), true);
 $idLocal = (int)($input['id_solicitud'] ?? 0);
+
 if ($idLocal <= 0) {
     logActivity("ERROR: Se recibió un ID de solicitud inválido ({$idLocal}).");
     respond(['success' => false, 'message' => 'ID de solicitud inválido.'], 400);
 }
 
-logActivity("Procesando solicitud ID: {$idLocal}");
+try {
+    $db = (new Database())->getConnection(); // PDO
+} catch (Throwable $e) {
+    logActivity("ERROR: No se pudo conectar a la base de datos: " . $e->getMessage());
+    respond(['success' => false, 'message' => 'Error de conexión a BD.'], 500);
+}
 
-$db = (new Database())->getConnection();
-$sel = $db->prepare('SELECT solicitud_id_sat, paquetes_json, rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
-$sel->execute([$idLocal]);
-$row = $sel->fetch(PDO::FETCH_ASSOC);
+$stmt = $db->prepare('SELECT solicitud_id_sat, paquetes_json, rfc_emisor, rfc_receptor FROM cf_solicitudes WHERE id_solicitud = ?');
+$stmt->execute([$idLocal]);
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$row) {
-    logActivity("ERROR: No se encontró la solicitud con ID {$idLocal} en la base de datos.");
+    logActivity("ERROR: No se encontró la solicitud con ID {$idLocal}.");
     respond(['success' => false, 'message' => 'Solicitud no encontrada.'], 404);
 }
 
 $paquetes = json_decode($row['paquetes_json'] ?? '[]', true);
-if (!is_array($paquetes) || empty($paquetes)) {
+if (empty($paquetes)) {
     logActivity("INFO: No hay paquetes para procesar en la solicitud {$idLocal}.");
     respond(['success' => false, 'message' => 'No hay paquetes pendientes en esta solicitud.'], 400);
 }
 
 $fiel = ensureFiel();
 $service = createService($fiel);
-
 $rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
 $baseTmp = __DIR__ . '/../uploads/tmp';
 @mkdir($baseTmp, 0775, true);
@@ -96,81 +100,90 @@ foreach ($paquetes as $p) {
         $nuevosPaquetes[] = $p;
         continue;
     }
-
     $pid = $p['package_id'] ?? '';
     if (!$pid) {
         $p['estado'] = 'error';
-        $p['mensaje_error'] = 'El ID del paquete (package_id) está vacío.';
+        $p['mensaje_error'] = 'El ID del paquete está vacío.';
         $nuevosPaquetes[] = $p;
-        logActivity("ERROR: Paquete sin ID en la solicitud {$idLocal}.");
         continue;
     }
 
-    logActivity("Intentando descargar paquete {$pid} para la solicitud {$idLocal}.");
+    logActivity("Intentando descargar paquete {$pid}...");
 
     try {
         $downloadResult = $service->download($pid);
         $zipContents = $downloadResult->getPackageContent();
 
-        // Guardar siempre el contenido crudo para depuración
-        $debugFile = $baseTmp . "/DEBUG_{$pid}.txt";
-        file_put_contents($debugFile, $zipContents);
+        // Guardar respuesta cruda del SAT
+        $rawFile = $baseTmp . "/RAW_{$pid}.bin";
+        file_put_contents($rawFile, $zipContents);
+        logActivity("Guardada respuesta cruda del SAT en: {$rawFile} (" . strlen($zipContents) . " bytes)");
 
-        // Crear un archivo temporal para la validación con ZipArchive
-        $tempZipPath = tempnam(sys_get_temp_dir(), 'zip_validation');
-        file_put_contents($tempZipPath, $zipContents);
+        // Detectar tipo MIME real
+        $tmpMimeFile = tempnam(sys_get_temp_dir(), 'mime_');
+        file_put_contents($tmpMimeFile, $zipContents);
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $tmpMimeFile);
+        finfo_close($finfo);
+        unlink($tmpMimeFile);
+        logActivity("Tipo MIME detectado del paquete {$pid}: {$mime}");
 
-        $zip = new ZipArchive();
-        $res = $zip->open($tempZipPath);
-
-        if ($res !== true) {
-            unlink($tempZipPath); // Limpiar archivo temporal
-            $errorMsg = "El paquete [{$pid}] no es un archivo ZIP válido (Error de ZipArchive: {$res}). La respuesta del SAT se guardó en {$debugFile}.";
-
-            // Intentar leer el error del SAT
-            $xmlError = @simplexml_load_string($zipContents);
-            if ($xmlError && isset($xmlError->Codigo, $xmlError->Mensaje)) {
-                $errorMsg .= " Mensaje del SAT: [{$xmlError->Codigo}] {$xmlError->Mensaje}";
-            }
-
-            throw new \Exception($errorMsg);
+        // Registrar si parece XML o HTML
+        if (stripos($zipContents, '<?xml') === 0 || stripos($zipContents, '<html') !== false) {
+            logActivity("⚠️ El SAT devolvió texto (XML/HTML), no un ZIP válido para {$pid}. Guardado para análisis.");
+            $p['estado'] = 'error';
+            $p['mensaje_error'] = 'El SAT devolvió texto (XML/HTML), no un ZIP válido.';
+            $nuevosPaquetes[] = $p;
+            continue;
         }
 
-        $zip->close();
-        unlink($tempZipPath); // Limpiar archivo temporal
+        // Intentar decodificar base64
+        $decoded = @base64_decode($zipContents, true);
+        if ($decoded !== false && strlen($decoded) > 100) {
+            logActivity("El contenido del SAT parece estar codificado en base64, decodificando...");
+            $zipContents = $decoded;
+        }
 
-        // Si es válido, guardar el archivo ZIP definitivo
-        $pathDir = $baseTmp . '/' . $rfc . '/' . $idLocal;
+        // Guardar ZIP final
+        $pathDir = "{$baseTmp}/{$rfc}/{$idLocal}";
         @mkdir($pathDir, 0775, true);
-        $filename = $pathDir . '/' . $pid . '.zip';
+        $zipFilePath = "{$pathDir}/{$pid}.zip";
+        file_put_contents($zipFilePath, $zipContents);
 
-        if (file_put_contents($filename, $zipContents) === false) {
-            throw new \Exception("Error al escribir el archivo ZIP en disco para el paquete [{$pid}].");
+        // Validar ZIP
+        $zip = new ZipArchive();
+        if ($zip->open($zipFilePath) !== true) {
+            throw new Exception("El archivo descargado no es un ZIP válido. Ver RAW_{$pid}.bin");
+        }
+        $numFiles = $zip->numFiles;
+        $zip->close();
+
+        if ($numFiles === 0) {
+            throw new Exception("El ZIP está vacío.");
         }
 
-        $relPath = "uploads/tmp/{$rfc}/{$idLocal}/{$pid}.zip";
         $p['estado'] = 'descargado';
-        $p['zip_path'] = $relPath;
-        $p['fecha_descarga'] = date('Y-m-d H:i:s');
+        $p['zip_path'] = str_replace(realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR, '', realpath($zipFilePath));
+        $nuevosPaquetes[] = $p;
         $descargados++;
-        logActivity("ÉXITO: Paquete {$pid} descargado y guardado correctamente.");
+
+        logActivity("✅ Paquete {$pid} descargado correctamente ({$numFiles} archivos).");
     } catch (Throwable $e) {
         $p['estado'] = 'error';
         $p['mensaje_error'] = $e->getMessage();
-        logActivity("ERROR al procesar paquete {$pid}: " . $e->getMessage());
+        logActivity("❌ ERROR en paquete {$pid}: " . $e->getMessage());
+        $nuevosPaquetes[] = $p;
     }
-
-    $nuevosPaquetes[] = $p;
 }
 
 $upd = $db->prepare('UPDATE cf_solicitudes SET paquetes_json = ?, ultima_verificacion = NOW() WHERE id_solicitud = ?');
-$upd->execute([json_encode($nuevosPaquetes), $idLocal]);
+$upd->execute([json_encode($nuevosPaquetes, JSON_UNESCAPED_UNICODE), $idLocal]);
 
-logActivity("--- Fin del proceso de descarga para la solicitud {$idLocal}. Descargados: {$descargados}. ---");
+logActivity("--- Fin del proceso. Descargados: {$descargados} ---");
 
 respond([
     'success' => true,
-    'message' => "Proceso de descarga finalizado. Se intentaron descargar todos los paquetes.",
+    'message' => "Descarga completada. Paquetes descargados: {$descargados}.",
     'descargados' => $descargados,
     'paquetes' => $nuevosPaquetes
 ]);
