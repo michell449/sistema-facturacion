@@ -314,19 +314,15 @@
         }
       });
 
-      // ---- SOLICITAR DESCARGA ----
       formDescarga.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // --- INICIO DE LA CORRECCIÓN CLAVE ---
-        // Construimos el objeto de datos manualmente para asegurar que los valores son correctos y limpios.
         const data = {
           tipo_descarga: formDescarga.querySelector('select[name="tipo_descarga"]').value.trim(),
           rfc: formDescarga.querySelector('input[name="rfc"]').value.trim(),
           fecha_inicio: formDescarga.querySelector('input[name="fecha_inicio"]').value,
           fecha_fin: formDescarga.querySelector('input[name="fecha_fin"]').value
         };
-        // --- FIN DE LA CORRECCIÓN CLAVE ---
 
         // Validaciones de fechas
         if (!data.fecha_inicio || !data.fecha_fin) {
@@ -355,7 +351,6 @@
           return;
         }
 
-        // **IMPORTANTE**: Prueba con una fecha pasada o la fecha de hoy.
         // El SAT no permite fechas futuras.
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0); // Poner la hora a cero para comparar solo el día
@@ -364,8 +359,6 @@
           return;
         }
 
-
-        // Envío de la solicitud
         try {
           Swal.fire({
             title: 'Enviando Solicitud...',

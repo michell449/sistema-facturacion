@@ -14,20 +14,23 @@ try {
     $fRfc    = $_GET['rfc'] ?? '';
     $fTipo   = $_GET['tipo'] ?? '';
     $fEstado = $_GET['estado'] ?? '';
-    $fTexto  = $_GET['q'] ?? '';
+    $fTexto  = $_GET['q'] ?? ''; 
 
     $where = [];
     $params = [];
 
+    // filtrar por RFC 
     if ($fRfc !== '') {
         $where[] = "(rfc_emisor LIKE ? OR rfc_receptor LIKE ?)";
         $params[] = "%$fRfc%";
         $params[] = "%$fRfc%";
     }
+    
     if ($fTipo !== '') {
         $where[] = "tipo = ?";
         $params[] = $fTipo;
     }
+    
     if ($fEstado !== '') {
         $where[] = "estado = ?";
         $params[] = $fEstado;
@@ -47,7 +50,6 @@ try {
 
     if (!$rows) {
         echo '<tr><td colspan="10" class="text-muted">Sin resultados</td></tr>';
-        return;
     }
 
     $displayId = 1;
@@ -91,8 +93,11 @@ try {
         echo '<tr data-id="' . (int)$r['id_solicitud'] . '">';
         echo '<td>' . $displayId++ . '</td>';
         echo '<td class="text-break" style="max-width:180px"><small>' . ls_html_escape($r['solicitud_id_sat']) . '</small></td>';
-        $rfcMostrar = $r['rfc_emisor'] ?: ($r['rfc_receptor'] ?: ($r['rfc'] ?? ''));
+        
+        // RFC a mostrar
+        $rfcMostrar = $r['rfc_emisor'] ?: ($r['rfc_receptor'] ?: '');
         echo '<td>' . ls_html_escape($rfcMostrar) . '</td>';
+        
         echo '<td><span class="badge bg-' . $tCls . '">' . $tTxt . '</span></td>';
         echo '<td><small>' . $rango . '</small></td>';
         echo '<td><span class="badge bg-secondary fw-normal">' . $paquetesDesc . '/' . ($total) . '</span></td>';
@@ -107,10 +112,11 @@ try {
             echo ' <button class="btn btn-success btn-sm btn-procesar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Procesar Paquetes"><i class="fas fa-cogs"></i></button>';
         } elseif ($r['estado'] === 'terminada') {
             echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Descargar Paquetes"><i class="fas fa-download"></i></button>';
-        } elseif ($r['estado'] === 'rechazada') {
-            echo ' <button class="btn btn-danger btn-sm btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Rechazada"><i class="fas fa-trash-alt"></i></button>';
+        } elseif (in_array($r['estado'], ['rechazada', 'error', 'vencida'])) {
+            echo ' <button class="btn btn-danger btn-sm btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Rechazada/Fallida"><i class="fas fa-trash-alt"></i></button>';
         }
 
+        // Botones para abrir archivos ZIP
         if (!empty($paqs)) {
             echo '<div class="btn-group mt-1" role="group">';
             foreach ($paqs as $p) {

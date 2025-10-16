@@ -7,6 +7,10 @@ error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/class/db.php';
@@ -18,11 +22,12 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
-use GuzzleHttp\Client;
+use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceType;
+use PhpCfdi\SatWsDescargaMasiva\Shared\Token;
+use PhpCfdi\SatWsDescargaMasiva\WebClient\Exceptions\WebClientException;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
-use PhpCfdi\SatWsDescargaMasiva\Shared\ServiceType;
-
+use GuzzleHttp\Client; 
 function respond($data, $code = 200)
 {
     http_response_code($code);
@@ -30,42 +35,56 @@ function respond($data, $code = 200)
     exit;
 }
 
-function getFielFromSource(string $rfc): ?Fiel
+//Carga la Fiel y el Token de la sesión y crea una instancia de Service.
+function getServiceInstance(string $rfc): ?Service
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    if (
-        !isset($_SESSION['fiel_data']) ||
-        !isset($_SESSION['fiel_data'][$rfc]) ||
-        empty($_SESSION['fiel_data'][$rfc]['cer_content']) ||
-        empty($_SESSION['fiel_data'][$rfc]['key_content']) ||
-        empty($_SESSION['fiel_data'][$rfc]['passphrase'])
-    ) {
-        return null;
+    if (!isset($_SESSION['sat_data'][$rfc]['fiel_credentials'])) {
+        return null; // Credenciales de la FIEL no encontradas
     }
 
+    $fielData = $_SESSION['sat_data'][$rfc]['fiel_credentials'];
+    $tokenData = $_SESSION['sat_data'][$rfc]['token_data'] ?? null;
+    $token = null;
+
     try {
-        $fielData = $_SESSION['fiel_data'][$rfc];
         $fiel = Fiel::create(
             $fielData['cer_content'],
             $fielData['key_content'],
             $fielData['passphrase']
         );
-
-        return $fiel->isValid() ? $fiel : null;
-    } catch (Throwable $e) {
+        if (!$fiel->isValid()) {
+            error_log("La FIEL para $rfc ya no es válida.");
+            return null;
+        }
+    } catch (\Throwable $e) {
         error_log("Error al crear la FIEL desde la sesión para $rfc: " . $e->getMessage());
         return null;
     }
+
+    // Crear Token a partir de los datos de la sesión
+    if ($tokenData) {
+        $token = new Token(
+            DateTime::create($tokenData['created']),
+            DateTime::create($tokenData['expires']),
+            $tokenData['value']
+        );
+    }
+    $webClient = new GuzzleWebClient(new Client(['timeout' => 45]));
+    $requestBuilder = new FielRequestBuilder($fiel);
+
+    // Pasar el Token al constructor
+    return new Service($requestBuilder, $webClient, $token);
 }
 
-function createService(Fiel $fiel): Service
+
+ //Guarda el Token de autenticación en la sesión
+function saveTokenToSession(string $rfc, Token $token): void
 {
-    $client = new Client(['timeout' => 45]);
-    $webClient = new GuzzleWebClient($client);
-    return new Service(new FielRequestBuilder($fiel), $webClient);
+    $_SESSION['sat_data'][$rfc]['token_data'] = [
+        'value' => $token->getValue(),
+        'created' => $token->getCreated()->format('Y-m-d H:i:s'),
+        'expires' => $token->getExpires()->format('Y-m-d H:i:s'),
+    ];
 }
 
 
@@ -75,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-// 1. Validar campos básicos
+// Validar campos 
 $requiredFields = ['fecha_inicio', 'fecha_fin', 'tipo_descarga', 'rfc'];
 foreach ($requiredFields as $field) {
     if (empty($input[$field])) {
@@ -83,26 +102,29 @@ foreach ($requiredFields as $field) {
     }
 }
 
-// 2. Validar que las fechas no sean futuras.
+// Validar fechas
 try {
-    $hoy = new \DateTimeImmutable('now', new \DateTimeZone('America/Mexico_City'));
-    $inicio = new \DateTimeImmutable($input['fecha_inicio']);
-    $fin = new \DateTimeImmutable($input['fecha_fin']);
+    $hoy = DateTime::now();
+    $inicio = DateTime::create($input['fecha_inicio'] . ' 00:00:00');
+    $fin = DateTime::create($input['fecha_fin'] . ' 23:59:59');
 
-    if ($inicio > $hoy) {
+    if ($inicio->compareTo($hoy) > 0) {
         respond(['success' => false, 'message' => 'La fecha de inicio no puede ser una fecha futura.'], 400);
     }
-    if ($fin > $hoy) {
+    if ($fin->compareTo($hoy) > 0) {
         respond(['success' => false, 'message' => 'La fecha de fin no puede ser una fecha futura.'], 400);
     }
-    if ($inicio > $fin) {
-        respond(['success' => false, 'message' => 'La fecha de inicio no puede ser posterior a la fecha de fin.'], 400);
-    }
+    $period = DateTimePeriod::create($inicio, $fin);
+
 } catch (\Exception $e) {
-    respond(['success' => false, 'message' => 'Las fechas proporcionadas no tienen un formato válido.'], 400);
+    $message = $e->getMessage() === 'The final date must be greater than the initial date' 
+        ? 'La fecha de inicio no puede ser posterior o igual a la fecha de fin.' 
+        : 'Las fechas proporcionadas no tienen un formato válido.';
+        
+    respond(['success' => false, 'message' => $message], 400);
 }
 
-$tipoSolicitud = 'cfdi';
+$tipoSolicitud = 'cfdi'; // Por defecto
 $tipoDescarga = isset($input['tipo_descarga']) ? strtolower(trim($input['tipo_descarga'])) : '';
 
 $rfcSolicitante = $input['rfc'];
@@ -112,24 +134,25 @@ $rfcAutenticacion = $rfcSolicitante;
 
 if ($tipoDescarga === 'emitidos' || $tipoDescarga === 'emitidas') {
     $rfcEmisor = $rfcSolicitante;
-    $tipoDescarga = 'emitidos';
+    $tipoDescarga = 'issued';
     $tipoSolicitudBD = 'emitidas';
 } elseif ($tipoDescarga === 'recibidos' || $tipoDescarga === 'recibidas') {
     $rfcReceptor = $rfcSolicitante;
-    $tipoDescarga = 'recibidos';
+    $tipoDescarga = 'received';
     $tipoSolicitudBD = 'recibidas';
 } else {
     $receivedValue = $input['tipo_descarga'] ?? '[NO SE RECIBIÓ VALOR]';
     respond(['success' => false, 'message' => "El tipo de descarga no es válido. Se recibió el valor: '" . $receivedValue . "'"], 400);
 }
 
-// 4. Cargar la FIEL de la sesión
-$fiel = getFielFromSource($rfcAutenticacion);
-if (!$fiel) {
+
+// Cargar el Service con la FIEL y el Token de la sesión
+$service = getServiceInstance($rfcAutenticacion);
+if (!$service) {
     respond(['success' => false, 'message' => 'No se pudo cargar la FIEL para el RFC ' . $rfcAutenticacion . '. Por favor, autentíquese primero.'], 401);
 }
 
-// 5. Verificar si ya existe una solicitud similar para evitar duplicados
+// Verificar si ya existe una solicitud similar
 $db = (new Database())->getConnection();
 $checkStmt = $db->prepare(
     'SELECT id_solicitud, estado FROM cf_solicitudes WHERE fecha_ini = ? AND fecha_fin = ? AND tipo = ? AND (rfc_emisor = ? OR rfc_receptor = ?)'
@@ -147,39 +170,35 @@ if ($existingRequest && in_array($existingRequest['estado'], ['aceptada', 'en_pr
     respond([
         'success' => false,
         'message' => 'Ya existe una solicitud para este período y tipo de descarga. Por favor, verifique sus solicitudes existentes.'
-    ], 409); // 409 Conflict
+    ], 409);
 }
 
 
 try {
-    $service = createService($fiel);
+    $downloadType = ($tipoDescarga === 'received') ? DownloadType::received() : DownloadType::issued();
+    $requestType = RequestType::xml(); 
 
-    $start = DateTime::create($input['fecha_inicio'] . ' 00:00:00');
-    $end = DateTime::create($input['fecha_fin'] . ' 23:59:59');
-    $period = new DateTimePeriod($start, $end);
 
-    $downloadType = ($tipoDescarga === 'recibidos') ? DownloadType::received() : DownloadType::issued();
-    $requestType = RequestType::xml();
-    $serviceType = ServiceType::cfdi();
+    $queryParams = QueryParameters::create($period)
+        ->withDownloadType($downloadType)
+        ->withRequestType($requestType)
+        ->withServiceType(ServiceType::cfdi());
 
-    $queryParams = QueryParameters::create(
-        $period,
-        $downloadType,
-        $requestType,
-        $serviceType
-    );
-
+    // enviar solicitud de consulta
     $queryResult = $service->query($queryParams);
     $status = $queryResult->getStatus();
 
+    saveTokenToSession($rfcAutenticacion, $service->getToken());
+
+    //  estados de solicitud
     if (!$status->isAccepted()) {
         $message = "La solicitud fue rechazada por el SAT: [{$status->getCode()}] {$status->getMessage()}";
-        $code = 400; // Bad Request
+        $code = 400;
 
         switch ($status->getCode()) {
             case 300:
                 $message = "Usuario No Válido: {$status->getMessage()}";
-                $code = 401; // Unauthorized
+                $code = 401; 
                 break;
             case 301:
                 $message = "XML Mal Formado: {$status->getMessage()}";
@@ -187,20 +206,21 @@ try {
             case 304:
             case 305:
                 $message = "Certificado Inválido, Revocado o Caduco: {$status->getMessage()}";
-                $code = 401; // Unauthorized
+                $code = 401; 
                 break;
             case 5002:
                 $message = "Se han agotado las solicitudes de por vida para este criterio: {$status->getMessage()}";
-                $code = 429; // Too Many Requests
+                $code = 429; 
                 break;
             case 5005:
                 $message = "Ya existe una solicitud registrada con los mismos criterios: {$status->getMessage()}";
-                $code = 409; // Conflict
+                $code = 409;
                 break;
         }
         respond(['success' => false, 'message' => $message], $code);
     }
     
+    // registra solicitud en la base de datos
     $stmt = $db->prepare(
         'INSERT INTO cf_solicitudes (
         solicitud_id_sat, fecha_creacion, estado, tipo, folio, fecha_ini, fecha_fin, 
@@ -210,25 +230,25 @@ try {
     )'
     );
 
-    $token = bin2hex(random_bytes(10)); 
+    $tokenInternal = bin2hex(random_bytes(10));
 
     $stmt->execute([
         $queryResult->getRequestId(), 
         'aceptada',             
         $tipoSolicitudBD,       
-        $status->getMessage(),        
-        $start->format('Y-m-d'),   
-        $end->format('Y-m-d'),    
+        $status->getMessage(), 
+        $inicio->format('Y-m-d'),   
+        $fin->format('Y-m-d'),    
         $rfcEmisor ?: null,
         $rfcReceptor ?: null,         
-        $token                        
+        $tokenInternal                        
     ]);
 
     $idSolicitud = $db->lastInsertId();
 
     respond([
         'success' => true,
-        'message' => 'Solicitud enviada correctamente al SAT.',
+        'message' => 'Solicitud enviada correctamente al SAT y registrada.',
         'id_solicitud_local' => $idSolicitud,
         'id_solicitud_sat' => $queryResult->getRequestId(),
         'estado_sat' => [
@@ -237,6 +257,9 @@ try {
         ]
     ]);
 
+} catch (WebClientException $e) {
+    error_log("Error de WebClient: " . $e->getMessage() . " - Body: " . $e->getResponse()->getBody());
+    respond(['success' => false, 'message' => 'Error de comunicación con el SAT: ' . $e->getMessage()], 503);
 } catch (\Throwable $e) {
     error_log("Error en solicitar-descarga.php: " . $e->getMessage());
     respond(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()], 500);

@@ -5,11 +5,20 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php'; // Ya inicia la sesión con session_start()
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
+use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
+use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
+use PhpCfdi\SatWsDescargaMasiva\Service;
+use PhpCfdi\SatWsDescargaMasiva\Shared\Token;
+use PhpCfdi\SatWsDescargaMasiva\WebClient\Exceptions\WebClientException;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -52,6 +61,7 @@ $keyContent = file_get_contents($_FILES['keyFile']['tmp_name']);
 $password = $_POST['password'];
 
 try {
+    //Creacion y validacion de la FIEL
     $fiel = Fiel::create($cerContent, $keyContent, $password);
 
     if (!$fiel->isValid()) {
@@ -60,28 +70,51 @@ try {
 
     $rfc = $fiel->getRfc();
 
-    // --- INICIO DE CAMBIOS ---
-    // Guardar la FIEL en la sesión, organizada por RFC
-    if (!isset($_SESSION['fiel_data'])) {
-        $_SESSION['fiel_data'] = [];
+    // inicializar el servicio del SAT
+    $webClient = new GuzzleWebClient();
+    $requestBuilder = new FielRequestBuilder($fiel);
+    $service = new Service($requestBuilder, $webClient); // Se crea el servicio para CFDI Regulares por defecto
+
+    // obtener el token de autenticación
+    log_sat_activity("Iniciando solicitud de autenticación al SAT", ['rfc' => $rfc]);
+    $token = $service->authenticate(); 
+
+    // Verificar que el token no esté vacío
+    if ($token->isValueEmpty()) {
+        throw new \Exception('El SAT no devolvió un token de autenticación. Posiblemente un error de servicio.');
     }
-    
-    $_SESSION['fiel_data'][$rfc] = [
+
+    // Almacenar datos en la sesión
+    if (!isset($_SESSION['sat_data'])) {
+        $_SESSION['sat_data'] = [];
+    }
+
+    $_SESSION['sat_data'][$rfc]['fiel_credentials'] = [
         'cer_content' => $cerContent,
         'key_content' => $keyContent,
-        'passphrase'  => $password,
+        'passphrase' => $password,
     ];
-    // --- FIN DE CAMBIOS ---
 
-    log_sat_activity("FIEL autenticada y guardada en sesión", ['rfc' => $rfc]);
+    // Almacena la información del token 
+    $_SESSION['sat_data'][$rfc]['token_data'] = [
+        'value' => $token->getValue(),
+        'created' => $token->getCreated()->format('Y-m-d H:i:s'),
+        'expires' => $token->getExpires()->format('Y-m-d H:i:s'),
+    ];
+
+    log_sat_activity("Autenticación exitosa y Token obtenido", ['rfc' => $rfc, 'expires' => $token->getExpires()->format('Y-m-d H:i:s')]);
 
     json_response([
         'success' => true,
-        'message' => 'Autenticación exitosa y FIEL almacenada temporalmente.',
-        'rfc' => $rfc
+        'message' => 'Autenticación exitosa y Token obtenido.',
+        'rfc' => $rfc,
+        'token_expires' => $token->getExpires()->format('Y-m-d H:i:s')
     ]);
 
+} catch (WebClientException $e) {
+    log_sat_activity("Error de WebClient durante la autenticación", ['error' => $e->getMessage(), 'request' => $e->getRequest()->jsonSerialize(), 'response' => $e->getResponse()->jsonSerialize()]);
+    json_response(['success' => false, 'message' => 'Error de comunicación con el SAT: ' . $e->getMessage()], 503);
 } catch (\Throwable $e) {
-    log_sat_activity("Error autenticando FIEL", ['error' => $e->getMessage()]);
+    log_sat_activity("Error autenticando FIEL o iniciando servicio", ['error' => $e->getMessage()]);
     json_response(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 401);
 }
