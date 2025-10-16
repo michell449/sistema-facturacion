@@ -1,8 +1,17 @@
 <?php
 // core/verificar-descarga.php
 
+// === CONFIGURACIÓN DE ERRORES ===
+// Asegura que no se imprima HTML que rompa el JSON
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL); 
+ini_set('log_errors', 1); 
+ini_set('error_log', __DIR__ . '/../logs/php_error.log'); 
+
 header('Content-Type: application/json; charset=utf-8');
 
+// Carga de autoload.php
 $autoloadPrimary = __DIR__ . '/../vendor/autoload.php';
 $autoloadFallback = dirname(__DIR__) . '/vendor/autoload.php';
 if (file_exists($autoloadPrimary)) {
@@ -21,8 +30,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/class/db.php';
+require_once __DIR__ . '/class/db.php'; // Asumiendo que Database existe
 
+// === USES DE NAMESPACE ===
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
 use PhpCfdi\SatWsDescargaMasiva\Service;
@@ -32,20 +42,29 @@ use PhpCfdi\SatWsDescargaMasiva\WebClient\Exceptions\WebClientException;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use GuzzleHttp\Client;
 
+// === FUNCIONES AUXILIARES ===
 
-function respond($data, $code = 200)
+// Función de log simple para errores
+function logVerify(string $message): void
 {
+    $logFile = __DIR__ . '/../logs/verificar-descarga.log';
+    $timestamp = date('Y-m-d H:i:s');
+    @mkdir(dirname($logFile), 0775, true); 
+    file_put_contents($logFile, "[{$timestamp}] " . $message . "\n", FILE_APPEND);
+}
+
+function respond(array $data, int $code = 200): void
+{
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-//Crea una instancia de Service, inyectando el Token de la sesión si existe.
 function getServiceInstance(string $rfc): ?Service
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
     if (!isset($_SESSION['sat_data'][$rfc]['fiel_credentials'])) {
         return null;
     }
@@ -54,36 +73,33 @@ function getServiceInstance(string $rfc): ?Service
     $token = null;
 
     try {
-        // Crear Fiel
         $fiel = Fiel::create($fielData['cer_content'], $fielData['key_content'], $fielData['passphrase']);
         if (!$fiel->isValid()) {
             return null;
         }
     } catch (\Throwable $e) {
-        error_log("Error al crear la FIEL para $rfc: " . $e->getMessage());
         return null;
     }
 
     if ($tokenData) {
-        $token = new Token(
-            DateTime::create($tokenData['created']),
-            DateTime::create($tokenData['expires']),
-            $tokenData['value']
-        );
+        try {
+            $token = new Token(
+                DateTime::create($tokenData['created']),
+                DateTime::create($tokenData['expires']),
+                $tokenData['value']
+            );
+        } catch (\Throwable $e) {
+            $token = null;
+        }
     }
     
-    // Crear Service
     $webClient = new GuzzleWebClient(new Client(['timeout' => 90]));
     $requestBuilder = new FielRequestBuilder($fiel);
     return new Service($requestBuilder, $webClient, $token);
 }
 
-//Guarda el Token de autenticación en la sesión
 function saveTokenToSession(string $rfc, Token $token): void
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
     $_SESSION['sat_data'][$rfc]['token_data'] = [
         'value' => $token->getValue(),
         'created' => $token->getCreated()->format('Y-m-d H:i:s'),
@@ -91,15 +107,9 @@ function saveTokenToSession(string $rfc, Token $token): void
     ];
 }
 
-// Verifica si hay una FIEL activa en la sesión y devuelve el RFC.
 function ensureFiel(): string
 {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
     $activeRfc = null;
-    // Busca el RFC que tenga credenciales de FIEL guardadas
     foreach (array_keys($_SESSION['sat_data'] ?? []) as $rfc) {
         if (isset($_SESSION['sat_data'][$rfc]['fiel_credentials'])) {
             $activeRfc = $rfc;
@@ -119,47 +129,55 @@ function ensureFiel(): string
 }
 
 
-if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
-    // EJECUCIÓN EN SEGUNDO PLANO 
-    $idLocal = (int)$argv[2];
-    $requestId = $argv[3] ?? '';
-    $rfc = $argv[4] ?? ''; 
+// ------------------------------------
+// LÓGICA DE VERIFICACIÓN SÍNCRONA (HTTP POST)
+// ------------------------------------
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    respond(['success' => false, 'message' => 'Sólo POST'], 405);
+}
 
-    if (empty($rfc)) {
-        exit("Error: RFC necesario para la autenticación no proporcionado\n");
-    }
+$input = json_decode(file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    respond(['success' => false, 'message' => 'JSON inválido'], 400);
+}
 
-    $db = (new Database())->getConnection();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+$idLocal = (int)($input['id_solicitud'] ?? 0);
+$requestId = trim($input['requestId'] ?? '');
 
+if ($idLocal <= 0) {
+    respond(['success' => false, 'message' => 'Debe enviar id_solicitud (local)'], 400);
+}
+
+try {
+    // 1. Obtener RFC y Service
+    $rfc = ensureFiel(); 
     $service = getServiceInstance($rfc);
 
-    if (!$service) {
-        $db->prepare('UPDATE cf_solicitudes SET estado=?, mensaje_error=?, ultima_verificacion=NOW() WHERE id_solicitud=?')
-         ->execute(['error', 'No se pudo cargar la FIEL/Token para la verificación en segundo plano.', $idLocal]);
-        exit("Error: No se pudo cargar la FIEL para el RFC $rfc\n");
+    // 2. Obtener datos de la solicitud de la BD
+    $db = (new Database())->getConnection();
+    $db->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    
+    $sel = $db->prepare('SELECT solicitud_id_sat, paquetes_json, estado FROM cf_solicitudes WHERE id_solicitud=?');
+    $sel->execute([$idLocal]);
+    $row = $sel->fetch(\PDO::FETCH_ASSOC);
+    
+    if (!$row) {
+        respond(['success' => false, 'message' => "No se encontró la solicitud local $idLocal"], 404);
     }
 
-    try {
-        // Ejecutar la verificación
-        $verify = $service->verify($requestId);
-        
-        saveTokenToSession($rfc, $service->getToken());
+    $requestId = $requestId ?: $row['solicitud_id_sat'];
+    $paquetesList = json_decode($row['paquetes_json'] ?? '[]', true);
+    $estadoOriginal = $row['estado'];
 
-    } catch (WebClientException $e) {
-        $errorMessage = "Error de comunicación con SAT: " . $e->getMessage();
-        $db->prepare('UPDATE cf_solicitudes SET estado=?, mensaje_error=?, ultima_verificacion=NOW() WHERE id_solicitud=?')
-             ->execute(['error', $errorMessage, $idLocal]);
-        exit("Error al verificar (WebClient): " . $e->getMessage());
-    } catch (Throwable $e) {
-        $db->prepare('UPDATE cf_solicitudes SET estado=?, mensaje_error=?, ultima_verificacion=NOW() WHERE id_solicitud=?')
-             ->execute(['error', $e->getMessage(), $idLocal]);
-        exit("Error al verificar: " . $e->getMessage());
-    }
+    // 3. Realizar la verificación
+    $verifyResult = $service->verify($requestId);
+    
+    // 4. Guardar el token actualizado
+    saveTokenToSession($rfc, $service->getToken());
 
-    // Procesar el resultado de la verificación
-    $statusRequest = $verify->getStatusRequest();
-    $estadoSAT = 'pendiente';
+    // 5. Determinar el nuevo estado
+    $statusRequest = $verifyResult->getStatusRequest();
+    $estadoSAT = $estadoOriginal; 
 
     if ($statusRequest->isFinished()) {
         $estadoSAT = 'terminada';
@@ -173,11 +191,10 @@ if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
         $estadoSAT = 'aceptada';
     }
     
-    // Actualizar la lista de paquetes si la solicitud está 'terminada'
-    $paquetesList = json_decode($row['paquetes_json'] ?? '[]', true);
-    $packageIds = $verify->getPackagesIds();
+    // 6. Actualizar la lista de paquetes si está terminada y vacía
+    $packageIds = $verifyResult->getPackagesIds();
     
-    if ($estadoSAT === 'terminada' && count($paquetesList) === 0) {
+    if ($estadoSAT === 'terminada' && count($paquetesList) === 0 && count($packageIds) > 0) {
         foreach ($packageIds as $pid) {
             $paquetesList[] = [
                 'package_id' => $pid,
@@ -191,71 +208,39 @@ if (isset($argv) && count($argv) >= 3 && $argv[1] === '--background') {
         }
     }
 
-    //Actualizar la base de datos con el nuevo estado y paquetes
+    // 7. Actualizar la base de datos (clave: ultima_verificacion=NOW() y estado)
     $upd = $db->prepare('UPDATE cf_solicitudes
-         SET estado=?, total_paquetes=?, paquetes_json=?, ultima_verificacion=NOW(),
-             fecha_terminada=CASE WHEN estado NOT IN ("terminada", "error", "rechazada", "vencida") AND ? IN ("terminada", "error", "rechazada", "vencida") THEN NOW() ELSE fecha_terminada END
-         WHERE id_solicitud=?');
+             SET estado=?, total_paquetes=?, paquetes_json=?, ultima_verificacion=NOW(),
+                 fecha_terminada=CASE WHEN estado NOT IN ("terminada", "error", "rechazada", "vencida") AND ? IN ("terminada", "error", "rechazada", "vencida") THEN NOW() ELSE fecha_terminada END
+             WHERE id_solicitud=?');
     
     $upd->execute([
         $estadoSAT, 
-        count($packageIds),
-        json_encode($paquetesList), 
+        count($packageIds), 
+        json_encode($paquetesList, JSON_UNESCAPED_UNICODE), 
         $estadoSAT, 
         $idLocal
     ]);
-
-    exit("Verificación completada ($estadoSAT) para solicitud $idLocal\n");
-}
-
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    respond(['success' => false, 'message' => 'Sólo POST'], 405);
-}
-
-$input = json_decode(file_get_contents('php://input'), true);
-if (!is_array($input)) {
-    respond(['success' => false, 'message' => 'JSON inválido'], 400);
-}
-
-$idLocal = (int)($input['id_solicitud'] ?? 0);
-$requestId = trim($input['requestId'] ?? '');
-
-if ($idLocal <= 0 && $requestId === '') {
-    respond(['success' => false, 'message' => 'Debe enviar id_solicitud o requestId'], 400);
-}
-
-$rfcVerificacion = ensureFiel(); // Obtiene el RFC del usuario activo
-
-if ($requestId === '') {
-    $db = (new Database())->getConnection();
-    $sel = $db->prepare('SELECT solicitud_id_sat FROM cf_solicitudes WHERE id_solicitud=?');
-    $sel->execute([$idLocal]);
-    $row = $sel->fetch(PDO::FETCH_ASSOC);
-    if (!$row) {
-        respond(['success' => false, 'message' => "No se encontró la solicitud local $idLocal"], 404);
+    
+    // 8. Responder con el nuevo estado
+    $messageStatus = $statusRequest->getMessage() ?: 'Estado actualizado correctamente.';
+    if ($estadoSAT !== $estadoOriginal) {
+        $messageStatus = "Estado actualizado a: " . strtoupper($estadoSAT);
     }
-    $requestId = $row['solicitud_id_sat'];
+
+    respond([
+        'success' => true,
+        'message' => $messageStatus,
+        'id_solicitud' => $idLocal,
+        'requestId' => $requestId,
+        'nuevo_estado' => $estadoSAT,
+        'estado_sat_code' => $statusRequest->getCode()
+    ]);
+
+} catch (WebClientException $e) {
+    logVerify("Error WebClient para $idLocal: " . $e->getMessage());
+    respond(['success' => false, 'message' => 'Error de comunicación con el SAT: ' . $e->getMessage()], 503);
+} catch (\Throwable $e) {
+    logVerify("Error inesperado en verificación $idLocal: " . $e->getMessage());
+    respond(['success' => false, 'message' => 'Error interno al procesar la verificación: ' . $e->getMessage()], 500);
 }
-
-respond([
-    'success' => true,
-    'message' => 'Verificación en proceso',
-    'id_solicitud' => $idLocal,
-    'requestId' => $requestId
-]);
-
-// Ejecutar en segundo plano la verificación
-$phpPath = PHP_BINARY; 
-$scriptPath = __FILE__;
-
-$cmd = sprintf(
-    '%s %s --background %d %s %s > /dev/null 2>&1 &',
-    escapeshellarg($phpPath),
-    escapeshellarg($scriptPath),
-    $idLocal,
-    escapeshellarg($requestId),
-    escapeshellarg($rfcVerificacion) // FIX: Pasar el RFC aquí
-);
-exec($cmd);
-exit;

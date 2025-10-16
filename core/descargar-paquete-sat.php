@@ -117,13 +117,14 @@ if (!is_array($paquetes) || empty($paquetes)) {
 $rfc = $row['rfc_emisor'] ?: $row['rfc_receptor'];
 $service = getServiceInstance($rfc);
 
+
 if (!$service) {
     logActivity("ERROR: No se pudo obtener Service Instance (FIEL/Token) para {$rfc}.");
     respond(['success' => false, 'message' => "No se pudo autenticar para el RFC {$rfc}. Vuelva a autenticar."], 401);
 }
 
 $baseTmp = __DIR__ . '/../uploads/tmp';
-@mkdir($baseTmp, 0775, true);
+mkdir($baseTmp, 0775, true);
 
 $nuevosPaquetes = [];
 $descargados = 0;
@@ -177,7 +178,7 @@ foreach ($paquetes as $p) {
         $zipFilePath = "{$pathDir}/{$pid}.zip";
         
         // Usar ruta relativa para guardar en BD
-        $relativeZipPath = 'uploads/tmp/' . $rfc . '/' . $idLocal . '/' . $pid . '.zip';
+        $relativeZipPath = '/uploads/tmp/' . $rfc . '/' . $idLocal . '/' . $pid . '.zip';
         file_put_contents($zipFilePath, $zipContents);
 
         // Validar ZIP

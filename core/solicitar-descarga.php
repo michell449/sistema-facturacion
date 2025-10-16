@@ -18,7 +18,7 @@ require_once __DIR__ . '/class/db.php';
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\FielRequestBuilder;
 use PhpCfdi\SatWsDescargaMasiva\Service;
-use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime;
+use PhpCfdi\SatWsDescargaMasiva\Shared\DateTime; 
 use PhpCfdi\SatWsDescargaMasiva\Shared\DateTimePeriod;
 use PhpCfdi\SatWsDescargaMasiva\Shared\DownloadType;
 use PhpCfdi\SatWsDescargaMasiva\Shared\RequestType;
@@ -27,7 +27,8 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\Token;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\Exceptions\WebClientException;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use PhpCfdi\SatWsDescargaMasiva\Services\Query\QueryParameters;
-use GuzzleHttp\Client; 
+use GuzzleHttp\Client;
+
 function respond($data, $code = 200)
 {
     http_response_code($code);
@@ -35,11 +36,11 @@ function respond($data, $code = 200)
     exit;
 }
 
-//Carga la Fiel y el Token de la sesión y crea una instancia de Service.
+// Carga la Fiel y el Token de la sesión y crea una instancia de Service.
 function getServiceInstance(string $rfc): ?Service
 {
     if (!isset($_SESSION['sat_data'][$rfc]['fiel_credentials'])) {
-        return null; // Credenciales de la FIEL no encontradas
+        return null;
     }
 
     $fielData = $_SESSION['sat_data'][$rfc]['fiel_credentials'];
@@ -61,23 +62,27 @@ function getServiceInstance(string $rfc): ?Service
         return null;
     }
 
-    // Crear Token a partir de los datos de la sesión
     if ($tokenData) {
-        $token = new Token(
-            DateTime::create($tokenData['created']),
-            DateTime::create($tokenData['expires']),
-            $tokenData['value']
-        );
+        try {
+            $token = new Token(
+                DateTime::create($tokenData['created']),
+                DateTime::create($tokenData['expires']),
+                $tokenData['value']
+            );
+        } catch (\Throwable $e) {
+            error_log("Error al recrear el Token para $rfc: " . $e->getMessage());
+            $token = null;
+        }
     }
+    
     $webClient = new GuzzleWebClient(new Client(['timeout' => 45]));
     $requestBuilder = new FielRequestBuilder($fiel);
 
-    // Pasar el Token al constructor
     return new Service($requestBuilder, $webClient, $token);
 }
 
 
- //Guarda el Token de autenticación en la sesión
+// Guarda el Token de autenticación en la sesión
 function saveTokenToSession(string $rfc, Token $token): void
 {
     $_SESSION['sat_data'][$rfc]['token_data'] = [
@@ -86,6 +91,7 @@ function saveTokenToSession(string $rfc, Token $token): void
         'expires' => $token->getExpires()->format('Y-m-d H:i:s'),
     ];
 }
+
 
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -124,7 +130,7 @@ try {
     respond(['success' => false, 'message' => $message], 400);
 }
 
-$tipoSolicitud = 'cfdi'; // Por defecto
+$tipoSolicitud = 'cfdi';
 $tipoDescarga = isset($input['tipo_descarga']) ? strtolower(trim($input['tipo_descarga'])) : '';
 
 $rfcSolicitante = $input['rfc'];
@@ -223,25 +229,25 @@ try {
     // registra solicitud en la base de datos
     $stmt = $db->prepare(
         'INSERT INTO cf_solicitudes (
-        solicitud_id_sat, fecha_creacion, estado, tipo, folio, fecha_ini, fecha_fin, 
-        rfc_emisor, rfc_receptor, token
-    ) VALUES (
-        ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?
-    )'
+            solicitud_id_sat, fecha_creacion, estado, tipo, folio, fecha_ini, fecha_fin, 
+            rfc_emisor, rfc_receptor, token
+        ) VALUES (
+            ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?
+        )'
     );
 
     $tokenInternal = bin2hex(random_bytes(10));
 
     $stmt->execute([
         $queryResult->getRequestId(), 
-        'aceptada',             
-        $tipoSolicitudBD,       
-        $status->getMessage(), 
+        'aceptada',         
+        $tipoSolicitudBD,      
+        $status->getMessage(), // El campo 'folio' parece usarse para el mensaje de estado del SAT
         $inicio->format('Y-m-d'),   
-        $fin->format('Y-m-d'),    
+        $fin->format('Y-m-d'),     
         $rfcEmisor ?: null,
-        $rfcReceptor ?: null,         
-        $tokenInternal                        
+        $rfcReceptor ?: null,          
+        $tokenInternal 
     ]);
 
     $idSolicitud = $db->lastInsertId();
