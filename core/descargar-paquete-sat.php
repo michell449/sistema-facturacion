@@ -12,8 +12,6 @@ use PhpCfdi\SatWsDescargaMasiva\Shared\Token;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\Exceptions\WebClientException;
 use PhpCfdi\SatWsDescargaMasiva\WebClient\GuzzleWebClient;
 use GuzzleHttp\Client;
-use Throwable;
-use ZipArchive;
 
 function logActivity($message)
 {

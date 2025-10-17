@@ -12,9 +12,6 @@ use CfdiUtils\Nodes\XmlNodeUtils;
 use PhpCfdi\CfdiToPdf\Converter;
 use PhpCfdi\CfdiToPdf\Builders\Html2PdfBuilder;
 use PhpCfdi\CfdiToPdf\CfdiDataBuilder;
-use Throwable;
-use PDO;
-use SimpleXMLElement;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -54,7 +51,7 @@ function parseCfdiXmlString(string $xmlString): array|bool
 
     // --- Extracción de Régimen Fiscal del Receptor ---
     $receptorRegimenValue = (string) $receptor['RegimenFiscalReceptor'] ?: '';
-    
+
     // Extracción de sub-nodos (solo en CFDI 3.3/4.0)
     $regimenReceptor = $comprobante->xpath('//*[local-name()="Receptor"]/*[local-name()="RegimenFiscal"]');
     if (!empty($regimenReceptor)) {
@@ -161,11 +158,18 @@ try {
         if (($paquete['procesado'] ?? 0) === 1) {
             continue;
         }
-        
-        $projectRoot = realpath(dirname(__DIR__));
+
+        $baseTmp = __DIR__ . '/../uploads/';  // Ajuste base correcto
         $relativeZipPath = ltrim($paquete['zip_path'], '/\\');
-        $zipfile = $projectRoot . DIRECTORY_SEPARATOR . $relativeZipPath;
-        
+
+        if (!str_starts_with($relativeZipPath, 'uploads/')) {
+            $relativeZipPath = 'uploads/' . $relativeZipPath;
+        }
+
+        $zipfile = realpath(dirname(__DIR__)) . DIRECTORY_SEPARATOR . $relativeZipPath;
+
+
+
         if (!file_exists($zipfile)) {
             $errors[] = "Archivo ZIP no encontrado: {$paquete['zip_path']}";
             $paquete['procesado'] = 2;
@@ -212,7 +216,7 @@ try {
                     @unlink($xmlPath);
                     continue;
                 }
-                
+
                 // Convertir a PDF
                 if (!convertirXmlAPdf($content, $pdfPath)) {
                     $errors[] = "No se pudo generar PDF del UUID: {$uuidStr}.";
@@ -227,15 +231,33 @@ try {
                 );
 
                 $insert->execute([
-                    $data['uuid'], $data['version'], $data['fecha'], $data['subtotal'], $data['total'],
-                    $data['moneda'], $data['metodo_pago'], $data['forma_pago'], $data['lugar_expedicion'],
-                    $data['no_certificado'], 
-                    $data['condiciones_pago'], $data['exportacion'], $data['tipo_comprobante'],
-                    $data['emisor_rfc'], $data['emisor_nombre'], $data['emisor_regimen'], 
-                    $data['receptor_rfc'], $data['receptor_nombre'], $data['receptor_domicilio'],
+                    $data['uuid'],
+                    $data['version'],
+                    $data['fecha'],
+                    $data['subtotal'],
+                    $data['total'],
+                    $data['moneda'],
+                    $data['metodo_pago'],
+                    $data['forma_pago'],
+                    $data['lugar_expedicion'],
+                    $data['no_certificado'],
+                    $data['condiciones_pago'],
+                    $data['exportacion'],
+                    $data['tipo_comprobante'],
+                    $data['emisor_rfc'],
+                    $data['emisor_nombre'],
+                    $data['emisor_regimen'],
+                    $data['receptor_rfc'],
+                    $data['receptor_nombre'],
+                    $data['receptor_domicilio'],
                     $data['receptor_regimen'],
-                    $data['receptor_uso_cfdi'], $data['no_certificado_sat'], $data['rfc_prov_certif'], 
-                    $xmlFile, $pdfFile, $data['serie'], $data['folio']
+                    $data['receptor_uso_cfdi'],
+                    $data['no_certificado_sat'],
+                    $data['rfc_prov_certif'],
+                    $xmlFile,
+                    $pdfFile,
+                    $data['serie'],
+                    $data['folio']
                 ]);
 
                 if ($insert->rowCount() > 0) {
@@ -246,10 +268,9 @@ try {
                     @unlink($pdfPath);
                 }
             }
-            
+
             // Marcar paquete como procesado
             $paquete['procesado'] = 1;
-            
         } catch (OpenZipFileException $e) {
             $errors[] = "No se pudo abrir ZIP '{$paquete['zip_path']}': " . $e->getMessage();
             $paquete['procesado'] = 2;
@@ -258,11 +279,11 @@ try {
             $paquete['procesado'] = 2;
         }
     }
-    
+
     // Actualizar el estado de la solicitud y el JSON de paquetes
-    
+
     $nuevoEstadoSolicitud = 'terminada';
-    
+
     if (!$hasPendingPaquetes && $insertedCount > 0 && empty($errors)) {
         $stmtDelete = $db->prepare("DELETE FROM cf_solicitudes WHERE id_solicitud = ?");
         $stmtDelete->execute([$idSolicitud]);
@@ -273,7 +294,7 @@ try {
         $stmtUpdate->execute([json_encode(array_values($paquetes), JSON_UNESCAPED_UNICODE), $nuevoEstadoSolicitud, $idSolicitud]);
         $message = "Proceso completado. Se registraron {$insertedCount} nuevas facturas.";
     }
-    
+
     if ($duplicatedCount > 0) {
         $message .= " Se omitieron {$duplicatedCount} duplicados.";
     }
@@ -282,7 +303,6 @@ try {
     }
 
     echo json_encode(['success' => true, 'message' => $message, 'inserted' => $insertedCount, 'errors' => $errors]);
-    
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error crítico: ' . $e->getMessage()]);

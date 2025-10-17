@@ -1,0 +1,29 @@
+[2025-10-17 04:33:27] === Inicio del proceso de descarga ===
+[2025-10-17 04:33:27] Procesando solicitud 40 para RFC: ADX220314QI2
+[2025-10-17 04:33:27] INFO: Token expirado para ADX220314QI2, se renovará automáticamente
+[2025-10-17 04:33:27] Intentando descargar paquete 5ED85925-87C4-4847-8323-59503E3F4603_01 para solicitud 40...
+[2025-10-17 04:33:27] INFO: Token expirado o no válido, renovando...
+[2025-10-17 04:33:29] Archivo ZIP guardado: C:\xampp\htdocs\app-m\core/../uploads/tmp/ADX220314QI2/40/5ED85925-87C4-4847-8323-59503E3F4603_01.zip (55187 bytes)
+[2025-10-17 04:33:29] ✅ Paquete 5ED85925-87C4-4847-8323-59503E3F4603_01 descargado correctamente - Archivos: 18, Tamaño: 55187 bytes
+[2025-10-17 04:33:29] Base de datos actualizada para solicitud 40
+[2025-10-17 04:33:29] === Fin del proceso. Descargados: 1 de 1 paquetes ===
+[2025-10-17 04:33:55] === Inicio del proceso de descarga ===
+[2025-10-17 04:33:55] Procesando solicitud 38 para RFC: ASY120705C39
+[2025-10-17 04:33:55] ERROR: No hay credenciales FIEL en sesión para RFC: ASY120705C39
+[2025-10-17 04:33:55] ERROR: No se pudo obtener Service Instance (FIEL/Token) para ASY120705C39.
+[2025-10-17 04:33:59] === Inicio del proceso de descarga ===
+[2025-10-17 04:33:59] Procesando solicitud 40 para RFC: ADX220314QI2
+[2025-10-17 04:33:59] === Fin del proceso. Descargados: 0 de 1 paquetes ===
+[2025-10-17 04:34:05] === Inicio del proceso de descarga ===
+[2025-10-17 04:34:05] Procesando solicitud 40 para RFC: ADX220314QI2
+[2025-10-17 04:34:05] === Fin del proceso. Descargados: 0 de 1 paquetes ===
+[2025-10-17 04:42:23] === Inicio del proceso de descarga ===
+[2025-10-17 04:42:23] Procesando solicitud 38 para RFC: ASY120705C39
+[2025-10-17 04:42:23] ERROR: No hay credenciales FIEL en sesión para RFC: ASY120705C39
+[2025-10-17 04:42:23] ERROR: No se pudo obtener Service Instance (FIEL/Token) para ASY120705C39.
+[2025-10-17 04:52:38] --- Inicio del proceso de descarga ---
+[2025-10-17 04:52:38] ERROR: No se pudo obtener Service Instance (FIEL/Token) para ASY120705C39.
+[2025-10-17 05:17:30] --- Inicio del proceso de descarga ---
+[2025-10-17 05:17:30] Intentando descargar paquete E6228F1B-6BB9-4A42-B801-AF0FD7674DA4_01 para solicitud 42...
+[2025-10-17 05:17:32] ✅ Paquete E6228F1B-6BB9-4A42-B801-AF0FD7674DA4_01 descargado correctamente (1 archivos) en /uploads/tmp/ADX220314QI2/42/E6228F1B-6BB9-4A42-B801-AF0FD7674DA4_01.zip.
+[2025-10-17 05:17:32] --- Fin del proceso. Descargados: 1 ---
