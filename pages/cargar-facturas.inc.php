@@ -252,29 +252,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        cargarFacturas(1);
-
-        // Delegación de eventos para los botones de paginación
-        document.getElementById("facturas-cargadas").addEventListener("click", (e) => {
-            if (e.target.matches(".page-link")) {
-                e.preventDefault();
-                const pagina = e.target.dataset.page;
-                if (pagina) cargarFacturas(pagina);
-            }
-        });
-    });
-
-    function cargarFacturas(pagina) {
-        fetch(`../../app-m/core/listar-facturas.php?pagina=${pagina}`)
-            .then((res) => res.text())
-            .then((html) => {
-                document.getElementById("facturas-cargadas").innerHTML = html;
-            })
-            .catch((err) => {
-                console.error("Error cargando facturas:", err);
-            });
-    }
-</script>

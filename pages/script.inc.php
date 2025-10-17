@@ -14,6 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src=""></script>
 <script src="js/adminlte.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!--end::Required Plugin(AdminLTE)--><!--begin::OverlayScrollbars Configure-->
 <script>
   const SELECTOR_SIDEBAR_WRAPPER = '.sidebar-wrapper';
@@ -433,11 +434,253 @@
       fechaInicio.addEventListener('change', actualizarDiasRango);
       fechaFin.addEventListener('change', actualizarDiasRango);
     });
+    //------------------------------------------------------------------------------------------------------
+    //paginacion
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarFacturas(1);
+
+      // Delegación de eventos para los botones de paginación
+      document.getElementById("facturas-cargadas").addEventListener("click", (e) => {
+        if (e.target.matches(".page-link")) {
+          e.preventDefault();
+          const pagina = e.target.dataset.page;
+          if (pagina) cargarFacturas(pagina);
+        }
+      });
+    });
+
+    function cargarFacturas(pagina) {
+      fetch(`../../app-m/core/listar-facturas.php?pagina=${pagina}`)
+        .then((res) => res.text())
+        .then((html) => {
+          document.getElementById("facturas-cargadas").innerHTML = html;
+        })
+        .catch((err) => {
+          console.error("Error cargando facturas:", err);
+        });
+    }
   </script>
 <?php endif; ?>
 
 <?php if (basename($_SERVER['REQUEST_URI'], '.php') === 'ver-peticiones' || (isset($_GET['pg']) && $_GET['pg'] === 'ver-peticiones')): ?>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔧 Inicializando sistema de peticiones v3.2 (Unificado y Corregido)...');
 
+      // Usamos el cuerpo de la tabla para delegar los eventos
+      const tablaPeticionesBody = document.querySelector('#tbody-solicitudes');
+
+      if (!tablaPeticionesBody) {
+        console.error(' No se encontró el cuerpo de la tabla (tbody) con id="tbody-solicitudes". Los botones no funcionarán.');
+        return;
+      }
+
+      // Un único manejador de eventos para todos los clics en la tabla
+      tablaPeticionesBody.addEventListener('click', async function(event) {
+
+        const botonClickeado = event.target.closest('a.btn, button.btn');
+
+        if (!botonClickeado || !botonClickeado.dataset.id) {
+          return; // No se hizo clic en un botón de acción con data-id
+        }
+
+        event.preventDefault();
+        const idSolicitud = botonClickeado.dataset.id;
+
+        // Si el botón ya está deshabilitado o tiene spinner, ignorar
+        if (botonClickeado.disabled) {
+          return;
+        }
+
+        if (botonClickeado.classList.contains('btn-verificar-individual')) {
+          const iconoOriginal = botonClickeado.innerHTML;
+
+          botonClickeado.disabled = true;
+          botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+          try {
+            const response = await fetch('core/verificar-descarga.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                id_solicitud: idSolicitud
+              })
+            });
+            const text = await response.text();
+            console.log('Respuesta cruda:', text);
+            let result;
+            try {
+              result = JSON.parse(text);
+            } catch (e) {
+              console.error('Respuesta no es JSON válido');
+              Swal.fire('Error', 'Respuesta no válida del servidor (ver consola).', 'error');
+              return;
+            }
+
+
+            if (!response.ok || !result.success) {
+              // Manejo de errores HTTP (400, 500) que sí devuelven JSON
+              throw new Error(result.message || 'Error al iniciar verificación');
+            }
+
+            Swal.fire({
+              icon: 'info',
+              title: 'Verificación Iniciada',
+              text: result.message + ' El estado se actualizará automáticamente.',
+              timer: 4000
+            });
+
+            botonClickeado.disabled = false;
+            botonClickeado.innerHTML = iconoOriginal;
+
+            // Recarga la tabla para ver el estado actualizado
+            setTimeout(() => location.reload(), 2000);
+
+          } catch (error) {
+            Swal.fire('Error', 'No se pudo iniciar la verificación: ' + error.message, 'error');
+            botonClickeado.disabled = false;
+            botonClickeado.innerHTML = iconoOriginal;
+          }
+          return;
+        }
+
+        // --- Lógica para DESCARGAR ---
+        if (botonClickeado.classList.contains('btn-descargar-paquetes')) {
+          botonClickeado.disabled = true;
+          botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+          Swal.fire({
+            title: 'Descargando Paquetes',
+            text: 'Conectando con el SAT, esto puede tardar un momento...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+          });
+
+          try {
+            const response = await fetch('core/descargar-paquete-sat.php', { // CORREGIDO: Usar el script de descarga
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                id_solicitud: idSolicitud
+              })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Error en el servidor');
+
+            Swal.fire('¡Éxito!', result.message, 'success').then(() => location.reload());
+
+          } catch (error) {
+            Swal.fire('Error', 'No se pudieron descargar los paquetes: ' + error.message, 'error');
+            botonClickeado.disabled = false;
+            botonClickeado.innerHTML = '<i class="fas fa-download"></i>';
+          }
+          return;
+        }
+
+        // --- Lógica para PROCESAR ---
+        if (botonClickeado.classList.contains('btn-procesar-paquetes')) {
+          botonClickeado.disabled = true;
+          botonClickeado.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+          Swal.fire({
+            title: 'Procesando Facturas',
+            text: 'Extrayendo, guardando y generando PDFs. Por favor, espere...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+          });
+
+          try {
+            const response = await fetch('core/procesar_paquetes.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                id_solicitud: idSolicitud
+              })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Error desconocido durante el procesamiento.');
+
+            Swal.fire({
+              icon: 'success',
+              title: '¡Proceso Completado!',
+              text: result.message,
+            }).then(() => {
+              location.reload();
+            });
+
+          } catch (error) {
+            Swal.fire('Error', 'No se pudieron procesar los paquetes: ' + error.message, 'error');
+            botonClickeado.disabled = false;
+            botonClickeado.innerHTML = '<i class="fas fa-cogs"></i>';
+          }
+          return;
+        }
+      });
+
+      console.log(' Sistema de peticiones v3.2 listo y unificado.');
+    });
+    // Usando jQuery
+    $(document).ready(function() {
+      // Función para reordenar los IDs visuales (primera columna)
+      function updateDisplayIds() {
+        $('#tbody-solicitudes tr').each(function(index) {
+          // El índice es base 0, por lo que el ID a mostrar es index + 1
+          $(this).find('td:first').text(index + 1);
+        });
+      }
+
+      // Delegación de eventos para el botón de eliminar por su clase CSS
+      $('#tbody-solicitudes').on('click', '.btn-eliminar-solicitud', function(e) {
+        e.preventDefault();
+        const idSolicitud = $(this).data('id');
+        const row = $(this).closest('tr');
+
+        if (confirm('¿Estás seguro de que deseas eliminar la solicitud Rechazada con ID ' + idSolicitud + '? Esta acción es irreversible y eliminará los archivos de paquete asociados.')) {
+          $.ajax({
+            url: 'core/eliminar-solicitud.php',
+            type: 'POST',
+            dataType: 'json',
+            data: {
+              id: idSolicitud
+            },
+            beforeSend: function() {
+              row.find('button, a').prop('disabled', true).addClass('disabled');
+              row.css('opacity', 0.5);
+            },
+            success: function(response) {
+              if (response.success) {
+                alert('Éxito: ' + response.message);
+
+                row.remove();
+
+                // Reordenar los IDs
+                updateDisplayIds();
+
+              } else {
+                alert('Error al eliminar: ' + response.message);
+              }
+            },
+            error: function(xhr, status, error) {
+              alert('Error de comunicación con el servidor. Por favor, revisa la consola (F12) para más detalles.');
+              console.error('Error AJAX:', status, error, xhr.responseText);
+            },
+            complete: function() {
+              if (row.length && row.parent().length) {
+                row.find('button, a').prop('disabled', false).removeClass('disabled');
+                row.css('opacity', 1);
+              }
+            }
+          });
+        }
+      });
+    });
+  </script>
 <?php endif; ?>
 
 
