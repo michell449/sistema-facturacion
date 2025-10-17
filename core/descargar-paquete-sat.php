@@ -1,7 +1,6 @@
 <?php
 // core/descargar-paquete-sat.php
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/class/db.php';
 
 use PhpCfdi\SatWsDescargaMasiva\RequestBuilder\FielRequestBuilder\Fiel;
@@ -122,7 +121,11 @@ if (!$service) {
 }
 
 $baseTmp = __DIR__ . '/../uploads/tmp';
-mkdir($baseTmp, 0775, true);
+// CORRECCIÓN: Se agrega una comprobación para evitar el warning 'File exists' si ya existe.
+if (!is_dir($baseTmp)) {
+    mkdir($baseTmp, 0775, true);
+}
+
 
 $nuevosPaquetes = [];
 $descargados = 0;
@@ -172,11 +175,14 @@ foreach ($paquetes as $p) {
 
         // Guardar ZIP final
         $pathDir = "{$baseTmp}/{$rfc}/{$idLocal}";
-        @mkdir($pathDir, 0775, true);
+        // CORRECCIÓN: Se agrega una comprobación para evitar el warning 'File exists'
+        if (!is_dir($pathDir)) {
+             @mkdir($pathDir, 0775, true);
+        }
         $zipFilePath = "{$pathDir}/{$pid}.zip";
         
-        // Usar ruta relativa para guardar en BD
-        $relativeZipPath = '/uploads/tmp/' . $rfc . '/' . $idLocal . '/' . $pid . '.zip';
+    // Usar ruta relativa para guardar en BD (sin '/../' al inicio)
+    $relativeZipPath = 'uploads/tmp/' . $rfc . '/' . $idLocal . '/' . $pid . '.zip';
         file_put_contents($zipFilePath, $zipContents);
 
         // Validar ZIP
@@ -200,18 +206,18 @@ foreach ($paquetes as $p) {
         $descargados++;
         $actualizados = true;
 
-        logActivity("✅ Paquete {$pid} descargado correctamente ({$numFiles} archivos) en {$relativeZipPath}.");
+        logActivity("Paquete {$pid} descargado correctamente ({$numFiles} archivos) en {$relativeZipPath}.");
 
     } catch (WebClientException $e) {
         $p['estado'] = 'error';
         $p['mensaje_error'] = 'Error de comunicación (WebClient): ' . $e->getMessage();
-        logActivity("❌ ERROR WebClient {$pid}: " . $e->getMessage());
+        logActivity( "ERROR WebClient {$pid}: " . $e->getMessage());
         $nuevosPaquetes[] = $p;
         $actualizados = true;
     } catch (Throwable $e) {
         $p['estado'] = 'error';
         $p['mensaje_error'] = 'Error inesperado: ' . $e->getMessage();
-        logActivity("❌ ERROR inesperado {$pid}: " . $e->getMessage());
+        logActivity(" ERROR inesperado {$pid}: " . $e->getMessage());
         $nuevosPaquetes[] = $p;
         $actualizados = true;
     }

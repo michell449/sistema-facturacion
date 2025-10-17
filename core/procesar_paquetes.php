@@ -39,20 +39,17 @@ function parseCfdiXmlString(string $xmlString): array|bool
         return false;
     }
 
-    // --- Extracción de Régimen Fiscal del Emisor ---
     $emisorRegimenValue = (string) $emisor['RegimenFiscal'] ?: '';
     if (empty($emisorRegimenValue)) {
-        // Fallback: buscar el sub-nodo RegimenFiscal (CFDI 3.3)
         $regimenes = $comprobante->xpath('//*[local-name()="Emisor"]/*[local-name()="RegimenFiscal"]');
         if (!empty($regimenes)) {
             $emisorRegimenValue = (string) $regimenes[0]['Regimen'];
         }
     }
 
-    // --- Extracción de Régimen Fiscal del Receptor ---
     $receptorRegimenValue = (string) $receptor['RegimenFiscalReceptor'] ?: '';
 
-    // Extracción de sub-nodos (solo en CFDI 3.3/4.0)
+
     $regimenReceptor = $comprobante->xpath('//*[local-name()="Receptor"]/*[local-name()="RegimenFiscal"]');
     if (!empty($regimenReceptor)) {
         $receptorRegimenValue = (string) $regimenReceptor[0]['Regimen'];
@@ -146,6 +143,9 @@ try {
     $duplicatedCount = 0;
     $hasPendingPaquetes = false;
 
+    // Obtener la ruta base real de la aplicación
+    $basePath = realpath(__DIR__ . '/..');
+
     // Procesar cada paquete descargado
     foreach ($paquetes as &$paquete) {
         if (empty($paquete['zip_path']) || ($paquete['estado'] ?? '') !== 'descargado') {
@@ -159,19 +159,17 @@ try {
             continue;
         }
 
-        $baseTmp = __DIR__ . '/../uploads/';  // Ajuste base correcto
+        // CORRECCIÓN CLAVE: Construir la ruta absoluta correctamente
+        // zip_path en BD es algo como: "/uploads/tmp/ADX220314QI2/45/C5D5EBC6-13FA-4475-9859-267A1ED74749_01.zip"
         $relativeZipPath = ltrim($paquete['zip_path'], '/\\');
-
-        if (!str_starts_with($relativeZipPath, 'uploads/')) {
-            $relativeZipPath = 'uploads/' . $relativeZipPath;
-        }
-
-        $zipfile = realpath(dirname(__DIR__)) . DIRECTORY_SEPARATOR . $relativeZipPath;
-
+        
+        // La ruta absoluta debe ser: {RUTA_BASE}/uploads/tmp/ADX...
+        $zipfile = $basePath . DIRECTORY_SEPARATOR . $relativeZipPath;
 
 
         if (!file_exists($zipfile)) {
-            $errors[] = "Archivo ZIP no encontrado: {$paquete['zip_path']}";
+            // Se registra el error con la ruta que se intentó usar
+            $errors[] = "Archivo ZIP no encontrado: {$zipfile}";
             $paquete['procesado'] = 2;
             continue;
         }
@@ -259,7 +257,6 @@ try {
                     $data['serie'],
                     $data['folio']
                 ]);
-
                 if ($insert->rowCount() > 0) {
                     $insertedCount++;
                 } else {
@@ -272,10 +269,10 @@ try {
             // Marcar paquete como procesado
             $paquete['procesado'] = 1;
         } catch (OpenZipFileException $e) {
-            $errors[] = "No se pudo abrir ZIP '{$paquete['zip_path']}': " . $e->getMessage();
+            $errors[] = "No se pudo abrir ZIP '{$zipfile}': " . $e->getMessage();
             $paquete['procesado'] = 2;
         } catch (Throwable $e) {
-            $errors[] = "Error crítico procesando paquete '{$paquete['zip_path']}': " . $e->getMessage();
+            $errors[] = "Error crítico procesando paquete '{$zipfile}': " . $e->getMessage();
             $paquete['procesado'] = 2;
         }
     }
@@ -284,7 +281,19 @@ try {
 
     $nuevoEstadoSolicitud = 'terminada';
 
-    if (!$hasPendingPaquetes && $insertedCount > 0 && empty($errors)) {
+    // Se actualiza el chequeo de si hay paquetes pendientes
+    $hasPendingPaquetes = count(array_filter($paquetes, function($p) {
+        return ($p['estado'] ?? '') !== 'descargado' && ($p['procesado'] ?? 0) !== 1;
+    })) > 0;
+    
+    // Si no hay paquetes pendientes y el conteo de inserciones es cero, puede que haya sido limpieza de temporales
+    $allProcessed = count(array_filter($paquetes, function($p) {
+        return ($p['procesado'] ?? 0) !== 1;
+    })) === 0;
+
+    if (!$hasPendingPaquetes && $allProcessed && empty($errors)) {
+        // Asumiendo que si todo se procesó, la solicitud ya cumplió su ciclo.
+        // Se puede eliminar la solicitud de la tabla cf_solicitudes.
         $stmtDelete = $db->prepare("DELETE FROM cf_solicitudes WHERE id_solicitud = ?");
         $stmtDelete->execute([$idSolicitud]);
         $message = "Proceso completado. Solicitud eliminada. Se registraron {$insertedCount} nuevas facturas.";

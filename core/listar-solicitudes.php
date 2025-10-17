@@ -2,7 +2,7 @@
 // core/listar-solicitudes.php
 
 require_once __DIR__ . '/class/db.php';
-
+require_once __DIR__ . '/../config.php';
 function ls_html_escape(string $v): string
 {
     return htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -14,7 +14,7 @@ try {
     $fRfc    = $_GET['rfc'] ?? '';
     $fTipo   = $_GET['tipo'] ?? '';
     $fEstado = $_GET['estado'] ?? '';
-    $fTexto  = $_GET['q'] ?? ''; 
+    $fTexto  = $_GET['q'] ?? '';
 
     $where = [];
     $params = [];
@@ -25,12 +25,12 @@ try {
         $params[] = "%$fRfc%";
         $params[] = "%$fRfc%";
     }
-    
+
     if ($fTipo !== '') {
         $where[] = "tipo = ?";
         $params[] = $fTipo;
     }
-    
+
     if ($fEstado !== '') {
         $where[] = "estado = ?";
         $params[] = $fEstado;
@@ -93,11 +93,11 @@ try {
         echo '<tr data-id="' . (int)$r['id_solicitud'] . '">';
         echo '<td>' . $displayId++ . '</td>';
         echo '<td class="text-break" style="max-width:180px"><small>' . ls_html_escape($r['solicitud_id_sat']) . '</small></td>';
-        
+
         // RFC a mostrar
         $rfcMostrar = $r['rfc_emisor'] ?: ($r['rfc_receptor'] ?: '');
         echo '<td>' . ls_html_escape($rfcMostrar) . '</td>';
-        
+
         echo '<td><span class="badge bg-' . $tCls . '">' . $tTxt . '</span></td>';
         echo '<td><small>' . $rango . '</small></td>';
         echo '<td><span class="badge bg-secondary fw-normal">' . $paquetesDesc . '/' . ($total) . '</span></td>';
@@ -106,26 +106,22 @@ try {
         echo '<td><small>' . ls_html_escape($r['ultima_verificacion'] ?? '') . '</small></td>';
 
         echo '<td>';
-        echo '<a href="#" class="btn btn-xs btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
+        echo '<div class="btn-group" role="group" aria-label="Acciones">';
+        echo '<a href="#" class="btn btn-lg btn-primary btn-verificar-individual" data-id="' . $r['id_solicitud'] . '" title="Verificar estado con el SAT"><i class="fas fa-sync-alt"></i></a>';
 
+        
         if ($r['estado'] === 'terminada' && $paquetesDesc > 0) {
-            echo ' <button class="btn btn-success btn-sm btn-procesar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Procesar Paquetes"><i class="fas fa-cogs"></i></button>';
-        } elseif ($r['estado'] === 'terminada') {
-            echo ' <button class="btn btn-outline-success btn-sm btn-descargar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Descargar Paquetes"><i class="fas fa-download"></i></button>';
-        } elseif (in_array($r['estado'], ['rechazada', 'error', 'vencida'])) {
-            echo ' <button class="btn btn-danger btn-sm btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Rechazada/Fallida"><i class="fas fa-trash-alt"></i></button>';
+            echo ' <button class="btn btn-success btn-lg btn-procesar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Procesar Paquetes"><i class="fas fa-cogs"></i></button>';
         }
-
-        // Botones para abrir archivos ZIP
-        if (!empty($paqs)) {
-            echo '<div class="btn-group mt-1" role="group">';
-            foreach ($paqs as $p) {
-                if (!empty($p['zip_path']) && file_exists(__DIR__ . '/../' . ltrim($p['zip_path'], '/\\'))) {
-                    $url = ls_html_escape($p['zip_path']);
-                    echo '<a href="' . $url . '" class="btn btn-outline-secondary btn-xs" target="_blank" title="Abrir paquete ' . basename($url) . '"><i class="fas fa-file-archive"></i></a>';
-                }
-            }
-            echo '</div>';
+        elseif ($r['estado'] === 'terminada') {
+            echo ' <button class="btn btn-outline-success btn-lg btn-descargar-paquetes" data-id="' . (int)$r['id_solicitud'] . '" title="Descargar Paquetes"><i class="fas fa-download"></i></button>';
+        }
+        elseif (in_array($r['estado'], ['rechazada', 'error', 'vencida'])) {
+            echo ' <button class="btn btn-danger btn-lg btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Rechazada/Fallida"><i class="fas fa-trash-alt"></i></button>';
+        }
+        
+        if ($r['estado'] === 'terminada' && $paquetesDesc === $total && $total > 0) {
+            echo ' <button class="btn btn-danger btn-lg btn-eliminar-solicitud" data-id="' . (int)$r['id_solicitud'] . '" title="Eliminar Solicitud Completada (Limpieza)"><i class="fas fa-trash-alt"></i></button>';
         }
         echo '</td>';
 

@@ -47,7 +47,7 @@ try {
     }
     
     // Verificar que solo se eliminen las rechazadas
-    if ($solicitud['estado'] !== 'rechazada') {
+    if ($solicitud['estado'] !== 'rechazada' && $solicitud['estado'] !== 'terminada') {
         http_response_code(403);
         $response['message'] = 'Solo se pueden eliminar solicitudes con estado "Rechazada".';
         echo json_encode($response);

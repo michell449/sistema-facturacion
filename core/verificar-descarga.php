@@ -128,10 +128,6 @@ function ensureFiel(): string
     return $activeRfc;
 }
 
-
-// ------------------------------------
-// LÓGICA DE VERIFICACIÓN SÍNCRONA (HTTP POST)
-// ------------------------------------
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond(['success' => false, 'message' => 'Sólo POST'], 405);
 }

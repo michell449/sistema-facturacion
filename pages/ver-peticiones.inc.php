@@ -144,14 +144,13 @@
                 });
 
                 try {
-                    const response = await fetch('core/actualizar-estado-solicitud.php', {
+                    const response = await fetch('core/descargar-paquete-sat.php', { // CORREGIDO: Usar el script de descarga
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            id_solicitud: idSolicitud,
-                            descargar_paquetes: true
+                            id_solicitud: idSolicitud
                         })
                     });
                     const result = await response.json();
